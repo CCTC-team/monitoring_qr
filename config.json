@@ -1,0 +1,210 @@
+{
+  "name": "Monitoring QR",
+  "description": "Module that supports a basic monitoring implementation for the purpose of SDV. This module is complimented by the Embellish fields module to display the endpoints in the form",
+  "namespace": "CCTC\\MonitoringQRModule",
+  "framework-version": 14,
+  "authors": [
+    {
+      "name": "Richard Hardy",
+      "email": "rmh54@cam.ac.uk",
+      "institution": "University of Cambridge - Cambridge Cancer Trials Centre"
+    }
+  ],
+  "links": {
+    "project": [
+      {
+        "name": "Monitoring QR",
+        "key": "monitoring-qr",
+        "icon": "fas fa-clipboard-check",
+        "url": "index.php",
+        "show-header-and-footer": true
+      }
+    ]
+  },
+  "system-settings": [
+  ],
+  "project-settings": [
+    {
+      "key": "monitoring-field-suffix",
+      "name": "Provide the suffix used to identify the monitoring field on a form. Only one field on the form should have the given suffix e.g. with suffix '_monstat', the monitoring field could have variable name form1_monstat",
+      "type": "text",
+      "repeatable": false,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "monitoring-flags-regex",
+      "name": "Provide the regex used to identify fields that should be monitored. For example, @ENDPOINT-[A-Z]+ will match all action tags prefixed by @ENDPOINT-. Do NOT include the surrounding /",
+      "type": "textarea",
+      "repeatable": false,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "monitoring-role",
+      "name": "What role do monitors use?",
+      "type": "user-role-list",
+      "repeatable": false,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "data-entry-roles",
+      "name": "What roles do data entry users use?",
+      "type": "user-role-list",
+      "repeatable": true,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "data-manager-role",
+      "name": "What role do data managers use?",
+      "type": "user-role-list",
+      "repeatable": false,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "monitoring-field-verified-key",
+      "name": "Id of monitoring status field meaning 'Verification complete'",
+      "type": "text",
+      "repeatable": false,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "monitoring-requires-verification-key",
+      "name": "Id of monitoring status field meaning 'Requires verification'",
+      "type": "text",
+      "repeatable": false,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "monitoring-requires-verification-due-to-data-change-key",
+      "name": "Id of monitoring status field meaning 'Requires verification due to data change'",
+      "type": "text",
+      "repeatable": false,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "monitoring-not-required-key",
+      "name": "Id of monitoring status field meaning 'Not required'",
+      "type": "text",
+      "repeatable": false,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "monitoring-verification-in-progress-key",
+      "name": "Id of monitoring status field meaning 'Verification in progress'",
+      "type": "text",
+      "repeatable": false,
+      "required": true,
+      "super-users-only": true
+    },
+    {
+      "key": "trigger-requires-verification-for-change",
+      "name": "A form's monitoring status is automatically set to 'Requires verification due to data change' if the current status is 'Verification complete' when",
+      "super-users-only": true,
+      "required": true,
+      "type": "dropdown",
+      "choices": [
+        { "value": "never", "name": "Never" },
+        { "value": "always", "name": "Always whenever any field is updated" },
+        { "value": "flagged", "name": "When the updated field is flagged" },
+        { "value": "previously_queried", "name": "When the updated field has been previously queried" },
+        { "value": "previously_queried_or_flagged", "name": "When the updated field has been previously queried or the field is flagged" }
+      ]
+    },
+    {
+      "key": "ignore-for-monitoring-action-tag",
+      "name": "An action tag that indicates the field should not be monitored and is therefore completely ignored by the monitoring workflow",
+      "type": "text",
+      "repeatable": false,
+      "required": false,
+      "super-users-only": true
+    },
+    {
+      "key": "monitoring-role-show-inline",
+      "name": "If the user has the monitor role, when checked, any open queries will be shown inline with the question being queried",
+      "type": "checkbox",
+      "repeatable": false,
+      "required": false,
+      "super-users-only": true
+    },
+    {
+      "key": "data-entry-role-show-inline",
+      "name": "If the user has the data entry role, when checked, any open queries will be shown inline with the question being queried",
+      "type": "checkbox",
+      "repeatable": false,
+      "required": false,
+      "super-users-only": true
+    },
+    {
+      "key": "data-manager-role-show-inline",
+      "name": "If the user has the data manager role, when checked, any open queries will be shown inline with the question being queried",
+      "type": "checkbox",
+      "repeatable": false,
+      "required": false,
+      "super-users-only": true
+    },
+    {
+      "key": "monitors-only-query-flagged-fields",
+      "name": "Monitors can only raise queries against flagged fields",
+      "type": "checkbox",
+      "repeatable": false,
+      "required": false,
+      "super-users-only": true
+    },
+    {
+      "key": "resolve-issues-behaviour",
+      "name": "When the user visits the Resolve Issues page, handle monitor status fields by",
+      "super-users-only": true,
+      "required": true,
+      "type": "dropdown",
+      "choices": [
+        { "value": "hiding-button", "name": "Hiding the button to interact with the query but leave the row in place" }
+      ]
+    },
+    {
+      "key": "do-not-hide-save-and-cancel-buttons-for-non-data-entry",
+      "name": "When checked, the save and cancel buttons are not hidden when the user is not a data entry user i.e. users other than data entry can interact with the form",
+      "type": "checkbox",
+      "repeatable": false,
+      "required": false,
+      "super-users-only": true
+    },
+    {
+      "key": "do-not-make-fields-readonly",
+      "name": "When checked, the default behaviour of making all fields readonly (except the monitor status and form status fields) is not applied i.e. users other than data entry can change the form values",
+      "type": "checkbox",
+      "repeatable": false,
+      "required": false,
+      "super-users-only": true
+    },
+    {
+      "key": "include-field-label-in-inline-form",
+      "name": "When checked, the first column in the inline table below the data entry form includes the field label after the field name",
+      "type": "checkbox",
+      "repeatable": false,
+      "required": false,
+      "super-users-only": true
+    },
+    {
+      "key": "allow-data-managers-to-respond-to-queries",
+      "name": "When checked, users with the data manager role can also respond to monitors' queries",
+      "type": "checkbox",
+      "repeatable": false,
+      "required": false,
+      "super-users-only": true
+    }
+  ],
+  "compatibility": {
+    "php-version-min": "8.0.27",
+    "php-version-max": "",
+    "redcap-version-min": "13.8.1",
+    "redcap-version-max": ""
+  }
+}
