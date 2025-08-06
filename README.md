@@ -36,7 +36,7 @@ Disabling the module at a system level will AUTOMATICALLY do the following via t
 1. Remove the code inserted into `Hooks.php`
 1. Remove the code inserted into `DataEntry.php`
 
-When a new version of the module becomes available, it should be disable and then re-enable from the Control Center. Failure to do so may result in the module to malfunction.
+When a new version of the module becomes available, it should be disabled and then re-enabled from the Control Center. Failure to do so may result in the module to malfunction.
 
 #### Set up and module configuration by project ####
 
