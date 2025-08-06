@@ -31,10 +31,12 @@ of monitor queries
     This executes the call to the hook `redcap_save_record_mon_qr` that is handled in the module 
 
 Disabling the module at a system level will AUTOMATICALLY do the following via the system hook
-`redcap_module_system_disable`;
+`redcap_module_system_disable`.
 1. Drop the `GetMonitorQueries` stored procedure in the REDCap database automatically
 1. Remove the code inserted into `Hooks.php`
 1. Remove the code inserted into `DataEntry.php`
+
+When a new version of the module becomes available, the module should be disabled and then re-enabled from the Control Center at the system level. Failure to do so may cause the module to malfunction.
 
 #### Set up and module configuration by project ####
 
