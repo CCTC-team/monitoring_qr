@@ -24,7 +24,6 @@ use CCTC\MonitoringQRModule\Rendering;
 $projId = $module->getProjectId();
 $moduleName = "monitoring_qr";
 $page = "index.php";
-$redcapPart = Utility::getREDCapUrlPart();
 
 echo "
 <div class='projhdr'>
