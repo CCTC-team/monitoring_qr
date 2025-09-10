@@ -4,7 +4,7 @@
 
 create procedure GetMonitorQueries
     (
-        in monQueryFieldNameSuffix varchar(100),
+        in monQueryFieldNameSuffix varchar(100) collate utf8mb4_unicode_ci,
         in skipCount int,
         in pageSize int,
         in projectId int,
@@ -66,18 +66,18 @@ end if;
 drop table if exists rh_mon_queries;
 create temporary table rh_mon_queries
 (
-    urn mediumint not null auto_increment primary key,
-    ts bigint(14) collate utf8mb4_unicode_ci null,
-    record varchar(100) collate utf8mb4_unicode_ci null,
-    event_id int(10) collate utf8mb4_unicode_ci null,
-    event_name varchar(64) collate utf8mb4_unicode_ci null,
-    field_name varchar(255) collate utf8mb4_unicode_ci null,
-    instance int collate utf8mb4_unicode_ci null,
-    comment text collate utf8mb4_unicode_ci null,
-    current_query_status varchar(100) collate utf8mb4_unicode_ci null,
-    username varchar(100) collate utf8mb4_unicode_ci null,
-    form_name varchar(100) collate utf8mb4_unicode_ci null
-);
+    urn mediumint NOT NULL auto_increment PRIMARY KEY,
+    ts bigint(14) DEFAULT NULL,
+    record varchar(100) DEFAULT NULL,
+    event_id int(10) DEFAULT NULL,
+    event_name varchar(64) DEFAULT NULL,
+    field_name varchar(255) DEFAULT NULL,
+    instance int DEFAULT NULL,
+    comment text DEFAULT NULL,
+    current_query_status varchar(100) DEFAULT NULL,
+    username varchar(100) DEFAULT NULL,
+    form_name varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 set sqlQuery = concat(
     'insert into rh_mon_queries (ts, record, event_id, event_name, field_name, instance, comment,
@@ -140,7 +140,7 @@ set sqlQuery = concat(
                 on a.record = c.record
                 where
                     a.project_id = ?
-                    and a.field_name collate utf8mb4_unicode_ci like concat(''%'', ?)
+                    and a.field_name like concat(''%'', ?)
                     and ? is null or ? = c.username     -- daguser is null or must filter for it when given
     ),
     joined as (
@@ -201,7 +201,7 @@ set sqlQuery = concat(
             on a.event_id = c.event_id
         where
             a.project_id = ?
-            and a.field_name collate utf8mb4_unicode_ci like concat(''%'', ?)
+            and a.field_name  like concat(''%'', ?)
             and a.value = ?                                      -- param
             and not exists
                 (
@@ -237,19 +237,19 @@ set sqlQuery = concat(
     drop table if exists mon_queries_final;
     create temporary table mon_queries_final
     (
-        urn mediumint not null auto_increment primary key,
-        ts bigint(14) collate utf8mb4_unicode_ci null,
-        record varchar(100) collate utf8mb4_unicode_ci null,
-        event_id int(10) collate utf8mb4_unicode_ci null,
-        event_name varchar(64) collate utf8mb4_unicode_ci null,
-        field_name varchar(255) collate utf8mb4_unicode_ci null,
-        instance int collate utf8mb4_unicode_ci null,
-        comment text collate utf8mb4_unicode_ci null,
-        current_query_status varchar(100) collate utf8mb4_unicode_ci null,
-        username varchar(100) collate utf8mb4_unicode_ci null,
-        form_name varchar(100) collate utf8mb4_unicode_ci null,
-        mon_stat_value varchar(100) collate utf8mb4_unicode_ci null
-    );
+        urn mediumint NOT NULL auto_increment PRIMARY KEY,
+        ts bigint(14) DEFAULT NULL,
+        record varchar(100) DEFAULT NULL,
+        event_id int(10) DEFAULT NULL,
+        event_name varchar(64) DEFAULT NULL,
+        field_name varchar(255) DEFAULT NULL,
+        instance int DEFAULT NULL,
+        comment text DEFAULT NULL,
+        current_query_status varchar(100) DEFAULT NULL,
+        username varchar(100) DEFAULT NULL,
+        form_name varchar(100) DEFAULT NULL,
+        mon_stat_value varchar(100) DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- return the main record set applying the paging here
     set sqlQuery =
@@ -272,22 +272,22 @@ set sqlQuery = concat(
                 -- form
                 and (? is null or form_name = ?)
                 -- field name
-                and (? is null or json_extract(comment, ''$[*].field'') collate utf8mb4_unicode_ci like concat(''%"'', ?, ''"%''))
+                and (? is null or json_extract(comment, ''$[*].field'')  like concat(''%"'', ?, ''"%''))
                 -- flag
-                and (? is null or json_extract(comment, ''$[*].flags'') collate utf8mb4_unicode_ci like concat(''%'', ?, ''%''))
+                and (? is null or json_extract(comment, ''$[*].flags'')  like concat(''%'', ?, ''%''))
                 -- username
                 and (? is null or username = ?)
                 -- response
-                -- and (? is null or json_extract(comment, ''$[*].response'') collate utf8mb4_unicode_ci like concat(''%"'', ?, ''"%''))
+                -- and (? is null or json_extract(comment, ''$[*].response'')  like concat(''%"'', ?, ''"%''))
                 and (? is null or
-                    (case when ? = ''no response'' collate utf8mb4_unicode_ci then
+                    (case when ? = ''no response''  then
                      -- only include where there is a query in the json, but not a response
-                     json_extract(comment, ''$[*].response'') collate utf8mb4_unicode_ci is null and
-                     json_extract(comment, ''$[*].query'') collate utf8mb4_unicode_ci is not null
-                     else json_extract(comment, ''$[*].response'') collate utf8mb4_unicode_ci like concat(''%'', ?, ''%'') end)
+                     json_extract(comment, ''$[*].response'')  is null and
+                     json_extract(comment, ''$[*].query'')  is not null
+                     else json_extract(comment, ''$[*].response'')  like concat(''%'', ?, ''%'') end)
                     )
                 -- query
-                and (? is null or json_extract(comment, ''$[*].query'') collate utf8mb4_unicode_ci like concat(''%"%'', ?, ''%"%''))
+                and (? is null or json_extract(comment, ''$[*].query'')  like concat(''%"%'', ?, ''%"%''))
           order by urn
           )
             select
