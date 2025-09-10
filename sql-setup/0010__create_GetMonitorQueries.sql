@@ -35,6 +35,7 @@ begin
 
 declare mess mediumtext;
 declare sqlQuery mediumtext;
+declare dataTable varchar(1000);
 
 if monQueryFieldNameSuffix is null or monQueryFieldNameSuffix = '' then
     set mess = concat('The stored proc GetMonitorQueries can''t proceed without a monQueryFieldNameSuffix being provided');
@@ -61,6 +62,10 @@ if currentMonitorStatus is not null and (currentMonitorStatus < -5 or currentMon
     set mess = concat('Valid values for currentMonitorStatus are null, or a value between -5 and 5 inclusive. 0 is not valid - use null instead');
     signal sqlstate '45000' set message_text = mess;
 end if;
+
+
+-- get the data table for this project
+set dataTable = (select data_table from redcap_projects where project_id = projectId);
 
 -- create the table for results so can get the options for filters
 drop table if exists rh_mon_queries;
@@ -110,11 +115,10 @@ set sqlQuery = concat(
                         y.username,
                         x.group_id,
                         z.group_name
-                    from
-                        redcap_data w
+                    from ', dataTable, ' w
                         left outer join
                         (
-                            select project_id, value as group_id, record from redcap_data
+                            select project_id, value as group_id, record from ', dataTable, '
                             where project_id = ? and field_name = ''__GROUPID__''
                         ) x
                         on w.project_id = x.project_id
@@ -191,8 +195,7 @@ set sqlQuery = concat(
             ? as current_query_status,
             null as username,
             b.form_name
-        from
-            redcap_data a
+        from ', dataTable, ' a
             inner join redcap_metadata b
             on
                 a.project_id = b.project_id
@@ -252,8 +255,7 @@ set sqlQuery = concat(
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- return the main record set applying the paging here
-    set sqlQuery =
-        'insert into mon_queries_final (urn, ts, record, event_id, event_name, field_name, instance, comment,
+    set sqlQuery = concat('insert into mon_queries_final (urn, ts, record, event_id, event_name, field_name, instance, comment,
             current_query_status, username, form_name, mon_stat_value)
          with mon_queries as
          (select * from rh_mon_queries
@@ -295,7 +297,7 @@ set sqlQuery = concat(
                 REGEXP_SUBSTR(c.element_enum, concat(b.value, '', [0-9a-zA-Z _]+'')) as mon_stat_value
             from
                 mon_queries a
-                inner join redcap_data b
+                inner join ', dataTable,' b
                 on
                     a.event_id = b.event_id
                     and a.record = b.record
@@ -310,7 +312,7 @@ set sqlQuery = concat(
                 b.project_id = ?
                 -- current monitor status - negative numbers are used to negate the selection
                 and (? is null or (case when ? < 0 then b.value <> abs(?) else b.value = ? end))
-                 ;';
+                 ;');
 
     prepare qry from sqlQuery;
     execute qry using
