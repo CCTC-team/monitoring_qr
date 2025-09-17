@@ -844,6 +844,7 @@ function addHistoryButton(showHistory) {
                             <div>
                                 <select style='width: 100%;' name='mon-q-response-$field' id='mon-q-response-$field' title='response-options'
                                     onchange='changeCommentAvailability(\"$field\")'>
+                                    <option value='Not responded'></option>
                                     <option value='Value updated as per source'>Value updated as per source</option>
                                     <option value='Value correct as per source'>Value correct as per source</option>
                                     <option value='Value correct, error in source updated'>Value correct, error in source updated</option>
@@ -1208,10 +1209,16 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
     let json = JSON.parse(queryContent);  
     
     let queries = [];
+    let emptyResponse = true;
     json.forEach(function(item) {
         let resp = document.getElementById('mon-q-response-' + item.field);
-        if(resp.value) {                                               
-            item.response = resp.value;                        
+        if(resp.value) {
+            item.response = resp.value;
+
+            if(resp.value != 'Not responded') {
+                emptyResponse = false;
+            }
+
             if(resp.value === 'Value correct, error in source updated' || resp.value === 'Missing data not done') {
                 let comm = document.getElementById('mon-q-response-comment-' + item.field);
                 //only add the comment if comment has a value
@@ -1219,16 +1226,21 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
                     item.comment = comm.value;
                 }
             }
-            
+
             queries.push(item);
         }        
     });
-    
+
+    if(emptyResponse) {
+        alert('You have not provided a response for any of the queries. Please provide a response.');
+        return;
+    }
+
     let allQueriesAndResponses = JSON.stringify(queries);
-    
+
     //apply the changes to db and ui
     writeQueryAndChangeStatus(ajaxPath, allQueriesAndResponses, field, pid, instance, event_id, record, reopen, null, 0, null, 'OTHER', 0, instrument, null);
-    
+
     window.location.reload();
 }
 </script>";
