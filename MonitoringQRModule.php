@@ -787,7 +787,7 @@ function addHistoryButton(showHistory) {
                             $rows .= "<tr>
                             <td style='padding: 5px; word-break: break-word'>$fieldTxt</td>
                             <td style='padding: 5px; word-break: break-word'><div>" . $fieldInfo["fieldValue"] . "<div/></td>
-                            <td style='padding: 5px; word-break: break-word'>$respAndComment</td>";
+                            <td name='mon-q-response-comment-$field' id='mon-q-response-comment-$field' style='padding: 5px; word-break: break-word'>$respAndComment</td>";
                             if (!empty($fieldInfo["response"])) {
                                 $rows .=
                                     "<td>
@@ -1100,6 +1100,7 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
     //with the given queries, if the reply is re-raised, add the query text and send back
     let json = JSON.parse(queryContent);
     let queries = [];
+    let notResponded = false;
     json.forEach(function(item) {        
         let replyQuery = document.getElementById('mon-q-response-outcome-' + item.field);
         if(replyQuery) {
@@ -1109,9 +1110,20 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
                 item.query = newQuery.value;            
                 queries.push(item);    
             }
+            if(replyQuery.value === 'accept') {
+                let comment = document.getElementById('mon-q-response-comment-' + item.field);
+
+                if(comment.textContent === 'Not responded')
+                    notResponded = true;
+            }
         }        
     });
     
+    if(notResponded) {
+        alert('You cannot accept a response of `Not responded`. Please select reraise');
+        return;
+    }
+
     if(queries.length > 0) {        
         let allQueries = JSON.stringify(queries);        
         //apply the changes to db and ui
