@@ -526,7 +526,22 @@ function writeQueryAndChangeStatus(
     event_id, record, reopen, status, send_back, 
     newIndex, response, response_requested, instrument,
     changeMonStatFunc) {
-    
+
+    if(allQueries === 'query closed as verified') {
+
+        const fieldComments = document.querySelectorAll('[id^=\"mon-q-response-comment\"]');
+        let notResponded = false;
+        fieldComments.forEach(function(fieldComment) {
+            if(fieldComment.textContent === 'No response')
+                notResponded = true;
+        });
+
+        if(notResponded) {
+            alert('You cannot verify a query that has no response.');
+            return;
+        }
+    }
+
     showProgress(1);
     
     $.post(app_path_webroot+'DataQuality/data_resolution_popup.php?pid='+pid+'&instance='+instance, 
@@ -844,7 +859,7 @@ function addHistoryButton(showHistory) {
                             <div>
                                 <select style='width: 100%;' name='mon-q-response-$field' id='mon-q-response-$field' title='response-options'
                                     onchange='changeCommentAvailability(\"$field\")'>
-                                    <option value='Not responded'></option>
+                                    <option value='No response'>No response</option>
                                     <option value='Value updated as per source'>Value updated as per source</option>
                                     <option value='Value correct as per source'>Value correct as per source</option>
                                     <option value='Value correct, error in source updated'>Value correct, error in source updated</option>
@@ -1113,14 +1128,14 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
             if(replyQuery.value === 'accept') {
                 let comment = document.getElementById('mon-q-response-comment-' + item.field);
 
-                if(comment.textContent === 'Not responded')
+                if(comment.textContent === 'No response')
                     notResponded = true;
             }
         }        
     });
     
     if(notResponded) {
-        alert('You cannot accept a response of `Not responded`. Please select reraise');
+        alert('You cannot accept a response of `No response`. Please select reraise');
         return;
     }
 
@@ -1144,6 +1159,7 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
             $rows = $rowsAndQueryContent["rows"];
             $queryData = $rowsAndQueryContent["queryData"];
             $escaped = htmlspecialchars(json_encode($queryData), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
             $createArgsForSendBack =
                 "'$ajaxPath', '$escaped', '$monitorField', '$project_id', $repeat_instance, 
                 '$event_id', '$record', '$instrument', $verificationInProgressIndex";
@@ -1227,7 +1243,7 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
         if(resp.value) {
             item.response = resp.value;
 
-            if(resp.value != 'Not responded') {
+            if(resp.value != 'No response') {
                 emptyResponse = false;
             }
 
