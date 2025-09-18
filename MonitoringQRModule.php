@@ -526,7 +526,22 @@ function writeQueryAndChangeStatus(
     event_id, record, reopen, status, send_back, 
     newIndex, response, response_requested, instrument,
     changeMonStatFunc) {
-    
+
+    if(allQueries === 'query closed as verified') {
+
+        const fieldComments = document.querySelectorAll('[id^=\"mon-q-response-comment\"]');
+        let notResponded = false;
+        fieldComments.forEach(function(fieldComment) {
+            if(fieldComment.textContent === 'No response')
+                notResponded = true;
+        });
+
+        if(notResponded) {
+            alert('You cannot verify a query that has no response.');
+            return;
+        }
+    }
+
     showProgress(1);
     
     $.post(app_path_webroot+'DataQuality/data_resolution_popup.php?pid='+pid+'&instance='+instance, 
@@ -787,7 +802,7 @@ function addHistoryButton(showHistory) {
                             $rows .= "<tr>
                             <td style='padding: 5px; word-break: break-word'>$fieldTxt</td>
                             <td style='padding: 5px; word-break: break-word'><div>" . $fieldInfo["fieldValue"] . "<div/></td>
-                            <td style='padding: 5px; word-break: break-word'>$respAndComment</td>";
+                            <td name='mon-q-response-comment-$field' id='mon-q-response-comment-$field' style='padding: 5px; word-break: break-word'>$respAndComment</td>";
                             if (!empty($fieldInfo["response"])) {
                                 $rows .=
                                     "<td>
@@ -844,6 +859,7 @@ function addHistoryButton(showHistory) {
                             <div>
                                 <select style='width: 100%;' name='mon-q-response-$field' id='mon-q-response-$field' title='response-options'
                                     onchange='changeCommentAvailability(\"$field\")'>
+                                    <option value='No response'>No response</option>
                                     <option value='Value updated as per source'>Value updated as per source</option>
                                     <option value='Value correct as per source'>Value correct as per source</option>
                                     <option value='Value correct, error in source updated'>Value correct, error in source updated</option>
@@ -1099,6 +1115,7 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
     //with the given queries, if the reply is re-raised, add the query text and send back
     let json = JSON.parse(queryContent);
     let queries = [];
+    let notResponded = false;
     json.forEach(function(item) {        
         let replyQuery = document.getElementById('mon-q-response-outcome-' + item.field);
         if(replyQuery) {
@@ -1108,9 +1125,20 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
                 item.query = newQuery.value;            
                 queries.push(item);    
             }
+            if(replyQuery.value === 'accept') {
+                let comment = document.getElementById('mon-q-response-comment-' + item.field);
+
+                if(comment.textContent === 'No response')
+                    notResponded = true;
+            }
         }        
     });
     
+    if(notResponded) {
+        alert('You cannot accept a response of `No response`. Please select reraise');
+        return;
+    }
+
     if(queries.length > 0) {        
         let allQueries = JSON.stringify(queries);        
         //apply the changes to db and ui
@@ -1131,6 +1159,7 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
             $rows = $rowsAndQueryContent["rows"];
             $queryData = $rowsAndQueryContent["queryData"];
             $escaped = htmlspecialchars(json_encode($queryData), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
             $createArgsForSendBack =
                 "'$ajaxPath', '$escaped', '$monitorField', '$project_id', $repeat_instance, 
                 '$event_id', '$record', '$instrument', $verificationInProgressIndex";
@@ -1208,10 +1237,16 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
     let json = JSON.parse(queryContent);  
     
     let queries = [];
+    let emptyResponse = true;
     json.forEach(function(item) {
         let resp = document.getElementById('mon-q-response-' + item.field);
-        if(resp.value) {                                               
-            item.response = resp.value;                        
+        if(resp.value) {
+            item.response = resp.value;
+
+            if(resp.value != 'No response') {
+                emptyResponse = false;
+            }
+
             if(resp.value === 'Value correct, error in source updated' || resp.value === 'Missing data not done') {
                 let comm = document.getElementById('mon-q-response-comment-' + item.field);
                 //only add the comment if comment has a value
@@ -1219,16 +1254,21 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
                     item.comment = comm.value;
                 }
             }
-            
+
             queries.push(item);
         }        
     });
-    
+
+    if(emptyResponse) {
+        alert('You have not provided a response for any of the queries. Please provide a response.');
+        return;
+    }
+
     let allQueriesAndResponses = JSON.stringify(queries);
-    
+
     //apply the changes to db and ui
     writeQueryAndChangeStatus(ajaxPath, allQueriesAndResponses, field, pid, instance, event_id, record, reopen, null, 0, null, 'OTHER', 0, instrument, null);
-    
+
     window.location.reload();
 }
 </script>";
