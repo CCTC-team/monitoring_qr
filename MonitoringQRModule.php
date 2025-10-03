@@ -908,8 +908,9 @@ function addHistoryButton(showHistory) {
 
             //strip any markup to allow this to succeed
             //fix for #112. replace any " or ' in the label. This means the history won't show the exact label as these chars
+            // replace any carriage returns or new lines with space in the label. This means the history won't show the exact label as these chars
             //will be removed, but better than bombing out and the solution is tricky
-            $fieldDataCleaned = str_replace('"', '', str_replace("'", "", (strip_tags($formInfo["formInfo"][$field]["fieldLabel"]))));
+            $fieldDataCleaned = str_replace(array("\r", "\n"), ' ', str_replace(array("'", '"'), "", (strip_tags($formInfo["formInfo"][$field]["fieldLabel"]))));
             $queryData[] = ["field" => $field, "field_label" => $fieldDataCleaned, "flags" => $flagsStr];
         }
 
