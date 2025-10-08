@@ -4,7 +4,7 @@ require_once APP_PATH_DOCROOT . "/Config/init_project.php";
 $lang = Language::getLanguage('English');
 
 global $Proj;
-$project_id = $Proj->id;
+$project_id = $module->getProjectId();
 global $module;
 $modName = $module->getModuleDirectoryName();
 
@@ -124,7 +124,7 @@ if ($fp && $result)
             $row["ts"] =
                 $row["ts"] == null || $row["ts"] == ""
                     ? ""
-                    : DateTime::createFromFormat('YmdHis', $row["ts"])->format('Y-m-d H:i:s');
+                    : DateTime::createFromFormat('YmdHis', $row["ts"])->format($userDateFormat);
 
             //query status
             $row["current_query_status"] =
