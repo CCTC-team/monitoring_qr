@@ -46,7 +46,6 @@ use CCTC\MonitoringQRModule\MonitoringQRModule;
 /** @var $yearActive */
 /** @var $maxDate */
 /** @var $minDate */
-/** @var $userDateFormat */
 include "getparams.php";
 
 //run the query using the same params as on the index page when the query called
@@ -124,7 +123,7 @@ if ($fp && $result)
             $row["ts"] =
                 $row["ts"] == null || $row["ts"] == ""
                     ? ""
-                    : DateTime::createFromFormat('YmdHis', $row["ts"])->format($userDateFormat);
+                    : DateTime::createFromFormat('YmdHis', $row["ts"])->format('Y-m-d H:i:s');
 
             //query status
             $row["current_query_status"] =
