@@ -192,9 +192,11 @@ if ($fp && $result)
     } catch (Exception $e) {
         $module->log("ex: ". $e->getMessage());
     }
+} else if (!$result) {
+    print "There are no monitoring queries available for export. Please return to the previous page.";
 }
 else
 {
     //error
-	print "There are no monitoring queries available for export. Please return to the previous page.";
+    print $lang['global_01'];
 }
