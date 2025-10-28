@@ -16,20 +16,20 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
 
     Given I click on the link labeled exactly "Manage"
     Then I should see "External Modules - Module Manager"
-    And I should NOT see "Monitoring QR - v0.0.0"
+    And I should NOT see "Monitoring QR - v1.0.0"
     When I click on the button labeled "Enable a module"
     And I click on the button labeled Enable for the external module named "Monitoring QR"
     And I click on the button labeled "Enable" in the dialog box
-    Then I should see "Monitoring QR - v0.0.0"
+    Then I should see "Monitoring QR - v1.0.0"
  
   Scenario: Enable external module in project
     Given I create a new project named "E.128.1540" by clicking on "New Project" in the menu bar, selecting "Practice / Just for fun" from the dropdown, choosing file "redcap_val/E1281500.xml", and clicking the "Create Project" button
     And I click on the link labeled exactly "Manage"
     Then I should see "External Modules - Project Module Manager"
-    And I should NOT see "Monitoring QR - v0.0.0"
+    And I should NOT see "Monitoring QR - v1.0.0"
     When I click on the button labeled "Enable a module"
-    And I click on the button labeled Enable for the external module named "Monitoring QR - v0.0.0"
-    Then I should see "Monitoring QR - v0.0.0"
+    And I click on the button labeled Enable for the external module named "Monitoring QR - v1.0.0"
+    Then I should see "Monitoring QR - v1.0.0"
 
     #ACTION: Enable the Data Resolution Workflow
     Given I click on the link labeled "Project Setup"
@@ -71,7 +71,7 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     And I scroll to the field labeled "When the user visits the Resolve Issues page, handle monitor status fields by"
     And I select "Hiding the button to interact with the query but leave the row in place" on the dropdown field labeled "When the user visits the Resolve Issues page, handle monitor status fields by" in the dialog box
     Then I click on the button labeled "Save" in the dialog box
-    And I should see "Monitoring QR - v0.0.0"
+    And I should see "Monitoring QR - v1.0.0"
     And I logout
 
     # E.128.1700, E.128.1800 - Verify Repeating Events Arm 2
@@ -94,6 +94,11 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
       | radio_button_auto | @ENDPOINT-SECONDARY              |                |
       | checkbox	        | -- not flagged for monitoring -- |                |
 
+    And I click on the button labeled "Raise monitor query"
+    # Alert not triggered in Cypress
+    # Then I should see "You have not provided any queries." in the dialog box
+    # And I click on the button labeled "OK" in the dialog box
+    Then I should see "Monitor query status: NONE"
     And I enter "Query1" in the column "Query to raise" for the field "checkbox"
     When I click on the button labeled "Raise monitor query"
     Then I should see the monitoring status "Verification in progress"
@@ -116,6 +121,7 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
       | checkbox	        | -- not flagged for monitoring -- |                |
 
     When I enter "Query2" in the column "Query to raise" for the field "text2"
+    And I enter "Query3" in the column "Query to raise" for the field "notesbox"
     And I click on the button labeled "Raise monitor query"
     Then I should see the monitoring status "Verification in progress"
     And I should see "Monitor query status: OPEN"
@@ -130,10 +136,16 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     When I click the bubble to select a record for the "Data Types" longitudinal instrument on event "(#3)"
     Then I should see "(Instance #3)"
     And I should see "Showing queried fields only. Waiting for responses."
+    When I click on the button labeled "Send response"
+    # Alert not triggered in Cypress
+    # Then I should see "You have not provided a response for any of the queries. Please provide a response." in the dialog box
+    # And I click on the button labeled "OK" in the dialog box
+    Then I should see "Showing queried fields only. Waiting for responses."
     And I select "Missing data not done" in the dropdown field in column "Response" for the field "text2"
     And I enter "Response1" in the column "Response" for the field "text2"
     When I click on the button labeled "Send response"
-    Then I should NOT see the monitoring table
+    Then I should NOT see "Showing queried fields only. Waiting for responses."
+    And I should NOT see the monitoring table
     And I logout
 
     Given I login to REDCap with the user "Test_User4"
@@ -149,8 +161,18 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     And I should see a table header and rows containing the following values in a table:
       | Field            | Field value | Query response [comment]          |
       | text2            |             | Missing data not done [Response1] |
+      | notesbox         |             | No response                       |
      
+    When I click on the button labeled "Close as verified"
+    # Alert not triggered in Cypress
+    # Then I should see "You cannot verify a query that has no response." in the dialog box
+    # And I click on the button labeled "OK" in the dialog box
+    When I click on the button labeled "Send back for further attention"
+    # Alert not triggered in Cypress
+    # Then I should see "You cannot accept a response of `No response`. Please select reraise" in the dialog box
+    # And I click on the button labeled "OK" in the dialog box
     When I select "reraise" in the dropdown field in column "Reply" for the field "text2"
+    When I select "reraise" in the dropdown field in column "Reply" for the field "notesbox"
     And I click on the button labeled "Send back for further attention"
     Then I should see the monitoring status "Verification in progress"
     And I should see "Monitor query status: OPEN"
@@ -192,23 +214,23 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     And I click on the link labeled "E.128.1540"
     Given I click on the link labeled exactly "Manage"
     Then I should see "External Modules - Project Module Manager"
-    And I should see "Monitoring QR - v0.0.0"
+    And I should see "Monitoring QR - v1.0.0"
     When I click on the button labeled exactly "Disable"
     Then I should see "Disable module?" in the dialog box
     When I click on the button labeled "Disable module" in the dialog box
-    Then I should NOT see "Monitoring QR - v0.0.0"
+    Then I should NOT see "Monitoring QR - v1.0.0"
 
     Given I click on the link labeled "Logging"
     Then I should see a table header and row containing the following values in the logging table:
       | Time / Date      | Username   | Action                                                                      | List of Data Changes OR Fields Exported                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v0.0.0" for project                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v0.0.0" for project | reserved-hide-from-non-admins-in-project-list, monitoring-field-suffix, monitoring-flags-regex, monitoring-role, data-entry-roles, data-manager-role, monitoring-not-required-key, monitoring-requires-verification-key, monitoring-requires-verification-due-to-data-change-key, monitoring-field-verified-key, monitoring-verification-in-progress-key, trigger-requires-verification-for-change, monitoring-role-show-inline, data-entry-role-show-inline, data-manager-role-show-inline, monitors-only-query-flagged-fields, resolve-issues-behaviour, do-not-hide-save-and-cancel-buttons-for-non-data-entry, do-not-make-fields-readonly, include-field-label-in-inline-form |
-      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v0.0.0" for project                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.0.0" for project                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.0.0" for project | reserved-hide-from-non-admins-in-project-list, monitoring-field-suffix, monitoring-flags-regex, monitoring-role, data-entry-roles, data-manager-role, monitoring-not-required-key, monitoring-requires-verification-key, monitoring-requires-verification-due-to-data-change-key, monitoring-field-verified-key, monitoring-verification-in-progress-key, trigger-requires-verification-for-change, monitoring-role-show-inline, data-entry-role-show-inline, data-manager-role-show-inline, monitors-only-query-flagged-fields, resolve-issues-behaviour, do-not-hide-save-and-cancel-buttons-for-non-data-entry, do-not-make-fields-readonly, include-field-label-in-inline-form |
+      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.0.0" for project                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
     # Disable external module in Control Center
     Given I click on the link labeled "Control Center"
     When I click on the link labeled exactly "Manage"
-    Then I should see "Monitoring QR - v0.0.0"
+    Then I should see "Monitoring QR - v1.0.0"
     When I click on the button labeled "View Usage"
     Then I should see "None" in the dialog box
     And I should NOT see "E.128.1510" in the dialog box
@@ -216,16 +238,16 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     And I click on the button labeled exactly "Disable"
     Then I should see "Disable module?" in the dialog box
     When I click on the button labeled "Disable module" in the dialog box
-    Then I should NOT see "Monitoring QR - v0.0.0"
+    Then I should NOT see "Monitoring QR - v1.0.0"
 
     Given I click on the link labeled "User Activity Log"
     Then I should see a table header and row containing the following values in a table:
       | Time             | User       | Event                                                                       |
-      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v0.0.0" for system                   |
-      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v0.0.0" for project                  |
-      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v0.0.0" for project |
-      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v0.0.0" for project                   |
-      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v0.0.0" for system                    |
+      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.0.0" for system                   |
+      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.0.0" for project                  |
+      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.0.0" for project |
+      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.0.0" for project                   |
+      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.0.0" for system                    |
 
     And I logout
 
