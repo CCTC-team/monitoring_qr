@@ -907,9 +907,8 @@ function addHistoryButton(showHistory) {
             $flagsStr = str_replace("-- not flagged for monitoring --", "unflagged", $flagsStr);
 
             //strip any markup to allow this to succeed
-            //fix for #112. replace any " or ' in the label. This means the history won't show the exact label as these chars
-            //will be removed, but better than bombing out and the solution is tricky
-            $fieldDataCleaned = str_replace('"', '', str_replace("'", "", (strip_tags($formInfo["formInfo"][$field]["fieldLabel"]))));
+            //Keep field label as-is after stripping tags - json_encode with JSON_HEX flags will handle escaping
+            $fieldDataCleaned = strip_tags($formInfo["formInfo"][$field]["fieldLabel"]);
             $queryData[] = ["field" => $field, "field_label" => $fieldDataCleaned, "flags" => $flagsStr];
         }
 
@@ -1063,7 +1062,7 @@ function raiseVerificationQuery(ajaxPath, queryContent, field, pid, instance, ev
                 true, $currentQueryStatus, false);
             $rows = $rowsAndQueryContent["rows"];
             $queryData = $rowsAndQueryContent["queryData"];
-            $sdvText = json_encode($queryData);
+            $sdvText = htmlspecialchars(json_encode($queryData), ENT_QUOTES, 'UTF-8');
 
             $reopen = count($qualHist) > 0 ? 1 : 0;
 
@@ -1082,13 +1081,34 @@ function raiseVerificationQuery(ajaxPath, queryContent, field, pid, instance, ev
                     : "";
 
             //add the monitor button for writing the query
-            //note the use of backticks ` to resolve issue 'resolve Uncaught SyntaxError: missing )' when using \"
+            //use data attribute to store JSON safely, avoiding escaping issues in onclick
             $endContent =
                 "
 <div class='d-flex justify-content-end mt-3 mb-2'>
     $moreButtons
-    <button class='btn btn-secondary btn-xs ml-5' type='button'
-        onclick='raiseVerificationQuery(`$ajaxPath`, `$sdvText`, `$monitorField`, $project_id, $repeat_instance, $event_id, `$record`, `$instrument`, $reopen, $verificationInProgressIndex )'>
+    <button class='btn btn-secondary btn-xs ml-5' type='button' id='raise-query-btn'
+        data-ajax-path='$ajaxPath'
+        data-query-content='$sdvText'
+        data-monitor-field='$monitorField'
+        data-project-id='$project_id'
+        data-repeat-instance='$repeat_instance'
+        data-event-id='$event_id'
+        data-record='$record'
+        data-instrument='$instrument'
+        data-reopen='$reopen'
+        data-ver-in-progress='$verificationInProgressIndex'
+        onclick='raiseVerificationQuery(
+            this.getAttribute(\"data-ajax-path\"),
+            this.getAttribute(\"data-query-content\"),
+            this.getAttribute(\"data-monitor-field\"),
+            this.getAttribute(\"data-project-id\"),
+            this.getAttribute(\"data-repeat-instance\"),
+            this.getAttribute(\"data-event-id\"),
+            this.getAttribute(\"data-record\"),
+            this.getAttribute(\"data-instrument\"),
+            this.getAttribute(\"data-reopen\"),
+            this.getAttribute(\"data-ver-in-progress\")
+        )'>
         Raise monitor query
     </button>
 </div>";
@@ -1158,17 +1178,32 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
                 "true", $currentQueryStatus, false);
             $rows = $rowsAndQueryContent["rows"];
             $queryData = $rowsAndQueryContent["queryData"];
-            $escaped = htmlspecialchars(json_encode($queryData), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-
-            $createArgsForSendBack =
-                "'$ajaxPath', '$escaped', '$monitorField', '$project_id', $repeat_instance, 
-                '$event_id', '$record', '$instrument', $verificationInProgressIndex";
+            $escaped = htmlspecialchars(json_encode($queryData), ENT_QUOTES, 'UTF-8');
 
             //include the send back button if responses have been received
             $sendBackButton =
                 $hasResponse && !$waitingForResponse
-                    ? "<button class='ml-4 btn btn-secondary btn-xs' type='button'
-                    onclick=\"sendBackForFurtherAttention($createArgsForSendBack )\">
+                    ? "<button class='ml-4 btn btn-secondary btn-xs' type='button' id='send-back-btn'
+                    data-ajax-path='$ajaxPath'
+                    data-query-content='$escaped'
+                    data-monitor-field='$monitorField'
+                    data-project-id='$project_id'
+                    data-repeat-instance='$repeat_instance'
+                    data-event-id='$event_id'
+                    data-record='$record'
+                    data-instrument='$instrument'
+                    data-ver-in-progress='$verificationInProgressIndex'
+                    onclick=\"sendBackForFurtherAttention(
+                        this.getAttribute('data-ajax-path'),
+                        this.getAttribute('data-query-content'),
+                        this.getAttribute('data-monitor-field'),
+                        this.getAttribute('data-project-id'),
+                        this.getAttribute('data-repeat-instance'),
+                        this.getAttribute('data-event-id'),
+                        this.getAttribute('data-record'),
+                        this.getAttribute('data-instrument'),
+                        this.getAttribute('data-ver-in-progress')
+                    )\">
                     Send back for further attention
                 </button>"
                     : "";
@@ -1301,19 +1336,38 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
                     false, $currentQueryStatus, $isDataManager);
                 $rows = $rowsAndQueryContent["rows"];
                 $currQuery = $lastQualHistEntry["comment"];
-                $escaped = htmlspecialchars(json_encode($currQuery), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-                $createArgsForResponse = "'$ajaxPath', $escaped, '$monitorField', '$project_id', $repeat_instance, '$event_id', '$record', '$instrument'";
+                // $currQuery is already JSON from database, just escape for HTML attribute
+                $escaped = htmlspecialchars($currQuery, ENT_QUOTES, 'UTF-8');
 
                 //if the user is data entry, or is a data manager and the option to allow data managers to respond
                 //to queries is true, then show the send response button
                 if($isDataEntry || ($isDataManager && $allowDMToRespondToQueries)) {
                     $endContent = "
                 <div class='d-flex justify-content-end mt-3 mb-2'>
-                <button class='ml-5 btn btn-secondary btn-xs' type='button'
-                    onclick=\"respondToQuery($createArgsForResponse)\">
+                <button class='ml-5 btn btn-secondary btn-xs' type='button' id='send-response-btn'
+                    data-ajax-path='$ajaxPath'
+                    data-query-content='$escaped'
+                    data-monitor-field='$monitorField'
+                    data-project-id='$project_id'
+                    data-repeat-instance='$repeat_instance'
+                    data-event-id='$event_id'
+                    data-record='$record'
+                    data-instrument='$instrument'
+                    data-reopen='0'
+                    onclick=\"respondToQuery(
+                        this.getAttribute('data-ajax-path'),
+                        this.getAttribute('data-query-content'),
+                        this.getAttribute('data-monitor-field'),
+                        this.getAttribute('data-project-id'),
+                        this.getAttribute('data-repeat-instance'),
+                        this.getAttribute('data-event-id'),
+                        this.getAttribute('data-record'),
+                        this.getAttribute('data-instrument'),
+                        this.getAttribute('data-reopen')
+                    )\">
                     Send response
                 </button>
-                </div>                
+                </div>
                                 ";
                 }
 
