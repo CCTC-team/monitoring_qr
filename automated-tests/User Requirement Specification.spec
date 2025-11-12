@@ -32,3 +32,4 @@ E.128.3100 – The system shall support the integration of the Monitoring QR ext
 E.128.3200 – The system shall support the integration of the Monitoring QR external module for Non-longitudinal projects utilizing Repeating Instruments and without DAGs.
 E.128.3300 – The system shall support the integration of the Monitoring QR external module for Non-longitudinal projects utilizing Non-repeating Instruments and with DAGs.
 E.128.3400 – The system shall support the integration of the Monitoring QR external module for Non-longitudinal projects utilizing Non-repeating Instruments and without DAGs.
+E.128.3500 - The system shall support the ability to configure 'Module configuration permissions in projects' for Monitoring QR external module.
