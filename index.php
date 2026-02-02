@@ -196,19 +196,19 @@ echo "
 
         <table border='0'>            
             <tr>
-                <td style='width: 100px;'><label for='record_id'>Record id</label></td>
+                <td style='width: 100px;'><label>Record id</label></td>
                 <td style='width: 190px;'>$recordsSelect</td>
                 <td></td>
-                <td><label for='currentstatus'>Query status</label></td>
+                <td><label>Query status</label></td>
                 <td>$currentStatusSelect<td/>                
-                <td><label style='margin: 0 10px' for='currmonstatus'>Monitor status</label>$currMonStatusSelect</td>
+                <td><label style='margin: 0 10px'>Monitor status</label>$currMonStatusSelect</td>
             </tr>            
             <tr>
-                <td><label style='margin-top: 10px' for='min_date'>Min edit date</label></td>
+                <td><label style='margin-top: 10px'>Min edit date</label></td>
                 <td><input id='startdt' style='width: 150px' name='startdt' class='x-form-text x-form-field' type='text' data-df='$userDateFormat' value='$minDate'></td>
                 <td><button class='clear-button' type='button' onclick='resetDate(\"startdt\")'><small><i class='fas fa-eraser'></i></small></button></td>
 
-                <td><label for='max_date'>Max edit date</label></td>
+                <td><label>Max edit date</label></td>
                 <td><input id='enddt' name='enddt' class='x-form-text x-form-field' type='text' data-df='$userDateFormat' value='$maxDate'></td>
                 <td><button style='margin-left: 0' class='clear-button' type='button' onclick='resetDate(\"enddt\")'><small><i class='fas fa-eraser'></i></small></button></td>
                 <td>
@@ -222,14 +222,14 @@ echo "
                 </td>
             </tr>
             <tr>
-                <td><label for='retdirection'>Order by</label></td>
+                <td><label>Order by</label></td>
                 <td>$retDirectionSelect</td>
                 <td/>
-                <td><label for='pagesize' class='mr-2'>Page size</label></td>
+                <td><label class='mr-2'>Page size</label></td>
                 <td>$pageSizeSelect</td>
                 <td/>
                 <td>
-                    <label style='margin: 0 10px' for='inc-no-timestamp'> 
+                    <label style='margin: 0 10px'> 
                         <input type='checkbox' id='inc-no-timestamp' name='inc-no-timestamp' value='yes' $incNoTimestamp
                                 onchange='onFilterChanged(\"inc-no-timestamp\")'> 
                         <small>always include items without a timestamp</small>
@@ -237,25 +237,25 @@ echo "
                 </td>
             </tr>
             <tr>
-                <td><label for='dataevnt'>Event</label></td>
+                <td><label>Event</label></td>
                 <td>$dataEventSelect</td>
                 <td/>
-                <td><label for='datainst'>Instance</label></td>
+                <td><label>Instance</label></td>
                 <td>$dataInstanceSelect</td>
                 <td></td>
-                <td><label style='margin-left:10px; width: 70px' for='datafrm'>Form</label>$dataFormSelect</td>                
+                <td><label style='margin-left:10px; width: 70px'>Form</label>$dataFormSelect</td>                
             </tr>
             <tr>
-                <td><label for='datafld'>Field</label></td>
+                <td><label>Field</label></td>
                 <td>$dataFieldSelect</td>
                 <td/>
-                <td><label for='dataflg'>Flag</label></td>
+                <td><label>Flag</label></td>
                 <td>$dataFlagSelect</td>
                 <td></td>
-                <td><label style='margin-left:10px; width: 70px' for='dataresp'>Response</label>$dataResponseSelect</td>                
+                <td><label style='margin-left:10px; width: 70px'>Response</label>$dataResponseSelect</td>                
             </tr>
             <tr>
-                <td><label for='datafld'>Query</label></td>
+                <td><label>Query</label></td>
                 <td>
                     <div style='display: flex; flex-direction: row'>                        
                         <div><input id='dataquerytext' name='dataquerytext' type='text' size='20' maxlength='100'
@@ -270,7 +270,7 @@ echo "
                 <td>
                 <button class='clear-button' type='button' onclick='clearFilter(\"dataquerytext\")'><small><i class='fas fa-eraser'></i></small></button>
                 </td>
-                <td><label for='usrname'>Username</label></td>
+                <td><label>Username</label></td>
                 <td>$usrnameSelect</td>
                 </td>
             </tr>

@@ -65,10 +65,10 @@ class Rendering
 
 
         $ret = "
-<style>#monitor-query-data-log td { border: 1px solid #cccccc; padding: 5px; }</style>
+<style>#monitor-query-data-log-table td { border: 1px solid #cccccc; padding: 5px; }</style>
 <br/>
 <div >
-<table id='monitor-query-data-log' style='table-layout: fixed;width:95%; word-break: break-word'><tr>
+<table id='monitor-query-data-log-table' style='table-layout: fixed;width:95%; word-break: break-word'><tr>
     <td class='header' style='width:20px;'>
     <td class='header' style='width:40px;'>Timestamp</td>
     <td class='header' style='width:40px;'>Username</td>

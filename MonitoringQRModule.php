@@ -1449,7 +1449,7 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
             $userArrays[$row['ui_id']] = $row['username'];
         }
 
-        $ui = "<small><table id='monitor-query-data-log' style='table-layout: fixed; width: 100%; word-break: break-word'>";
+        $ui = "<small><table id='monitor-query-data-log-table' style='table-layout: fixed; width: 100%; word-break: break-word'>";
         $ui .=
             "<tr style='font-weight: bold'>" .
             "<td style='width: 100px;'>Timestamp</td>" .
@@ -1652,7 +1652,7 @@ makeFieldsReadonly($fields, '$monitorField');
 
         $historyUi = self::getHistoryUi($formInfo);
         echo "<br/>
-        <style>#monitor-query-data-log td { border: 1px solid #fad42a; padding: 5px; }</style>
+        <style>#monitor-query-data-log-table td { border: 1px solid #fad42a; padding: 5px; }</style>
         <div id='form-query-history' class='yellow' style='display:none; width: 800px;'>
             <div style='margin-bottom: 10px'>Monitor query history</div>
             $historyUi
