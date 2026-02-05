@@ -324,7 +324,6 @@ echo "<script type='text/javascript'>
         window.location.href=finalUrl;                
     }
 </script>";
-
 if(count($monitoringData) > 0) {
 
     //get the user's preferred format
@@ -384,6 +383,7 @@ if(count($monitoringData) > 0) {
 
     $('#startdt').datetimepicker({
         dateFormat: dateFormat,
+        timeFormat: 'HH:mm',
         showOn: 'button', buttonImage: app_path_images+'date.png',
         onClose: function () {
             if(document.getElementById('startdt').value) {
@@ -394,6 +394,7 @@ if(count($monitoringData) > 0) {
     });
     $('#enddt').datetimepicker({
         dateFormat: dateFormat,
+        timeFormat: 'HH:mm',
         showOn: 'button', buttonImage: app_path_images+'date.png',
         onClose: function () {
             if(document.getElementById('enddt').value) {

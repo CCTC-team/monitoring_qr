@@ -10,6 +10,11 @@ use ExternalModules\AbstractExternalModule;
 require_once APP_PATH_DOCROOT . "/Classes/Language.php";
 use Language;
 
+require_once __DIR__ . '/classes/RoleManager.php';
+require_once __DIR__ . '/classes/CacheManager.php';
+use CCTC\MonitoringQRModule\Classes\RoleManager;
+use CCTC\MonitoringQRModule\Classes\CacheManager;
+
 class MonitoringQRModule extends AbstractExternalModule
 {
 
@@ -19,7 +24,84 @@ class MonitoringQRModule extends AbstractExternalModule
         TODO: need to implement language
      */
 
+    // Query Status Constants
     public const NO_QUERY = 'NONE';
+    public const QUERY_OPEN = 'OPEN';
+    public const QUERY_CLOSED = 'CLOSED';
+
+    // Response Type Constants
+    public const RESPONSE_VALUE_UPDATED = 'Value updated as per source';
+    public const RESPONSE_VALUE_CORRECT = 'Value correct as per source';
+    public const RESPONSE_SOURCE_UPDATED = 'Value correct, error in source updated';
+    public const RESPONSE_MISSING_DATA = 'Missing data not done';
+
+    // RoleManager instance for handling user roles
+    private ?RoleManager $roleManager = null;
+
+    // Gets or creates the RoleManager instance
+    private function getRoleManager(): RoleManager
+    {
+        if ($this->roleManager === null) {
+            $this->roleManager = new RoleManager($this);
+        }
+        return $this->roleManager;
+    }
+
+    // Preloads all project settings into cache with a single database call
+    // Call this at the start of heavy operations to avoid multiple round-trips
+    private function preloadProjectSettings(): void
+    {
+        $projectId = $this->getProjectId();
+        $preloadKey = CacheManager::makeKey('settings_preloaded', $projectId);
+
+        // Only preload once per request
+        if (CacheManager::get($preloadKey) !== null) {
+            return;
+        }
+
+        // Get all settings in one call
+        $allSettings = $this->getProjectSettings();
+
+        // Cache each setting individually
+        foreach ($allSettings as $key => $value) {
+            $cacheKey = CacheManager::makeKey('proj_setting', $projectId, $key);
+            CacheManager::set($cacheKey, $value);
+        }
+
+        CacheManager::set($preloadKey, true);
+    }
+
+    // Gets a project setting with in-memory caching (request-scoped, project-isolated)
+    private function getCachedProjectSetting(string $key)
+    {
+        $projectId = $this->getProjectId();
+        $cacheKey = CacheManager::makeKey('proj_setting', $projectId, $key);
+        return CacheManager::remember($cacheKey, function () use ($key) {
+            return $this->getProjectSetting($key);
+        });
+    }
+
+    // Gets field names for an instrument with in-memory caching (request-scoped, project-isolated)
+    private function getCachedFieldNames(string $instrument): array
+    {
+        $projectId = $this->getProjectId();
+        $cacheKey = CacheManager::makeKey('field_names', $projectId, $instrument);
+        return CacheManager::remember($cacheKey, function () use ($instrument) {
+            return REDCap::getFieldNames($instrument);
+        });
+    }
+
+    // Encodes a value for safe use in JavaScript string context
+    private static function jsEncode($value): string
+    {
+        return json_encode((string)$value, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+    }
+
+    // Encodes a value for safe use in HTML attributes
+    private static function attrEncode($value): string
+    {
+        return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+    }
 
     function exec($query): void
     {
@@ -134,11 +216,20 @@ hideCommentsButton();
             if(empty($settings['monitoring-field-suffix'])) {
                 return "Monitoring Field Suffix should not be empty";
             }
+            // Validate suffix format (should be valid variable name suffix)
+            if (!preg_match('/^[a-z_][a-z0-9_]*$/i', $settings['monitoring-field-suffix'])) {
+                return "Monitoring Field Suffix should only contain letters, numbers, and underscores";
+            }
         }
 
         if (array_key_exists("monitoring-flags-regex", $settings)) {
             if(empty($settings['monitoring-flags-regex'])) {
                 return "Regex used to identify fields that should be monitored should not be empty";
+            }
+            // Validate regex syntax
+            $regex = $settings['monitoring-flags-regex'];
+            if (@preg_match("/$regex/", '') === false) {
+                return "Regex for monitoring flags is invalid. Check your regex syntax. Note: Do not include leading/trailing slashes.";
             }
         }
 
@@ -161,33 +252,30 @@ hideCommentsButton();
             }
         }
 
-        if (array_key_exists("monitoring-field-verified-key", $settings)) {
-            if(empty($settings['monitoring-field-verified-key'])) {
-                return "Id of monitoring status field for 'Verification complete' should not be empty";
-            }
-        }
+        // Validate enum index fields (must be numeric)
+        $enumFields = [
+            "monitoring-field-verified-key" => "Verification complete",
+            "monitoring-requires-verification-key" => "Requires verification",
+            "monitoring-requires-verification-due-to-data-change-key" => "Requires verification due to data change",
+            "monitoring-not-required-key" => "Not required",
+            "monitoring-verification-in-progress-key" => "Verification in progress"
+        ];
 
-        if (array_key_exists("monitoring-requires-verification-key", $settings)) {
-            if(empty($settings['monitoring-requires-verification-key'])) {
-                return "Id of monitoring status field for 'Requires verification' should not be empty";
-            }
-        }
-
-        if (array_key_exists("monitoring-requires-verification-due-to-data-change-key", $settings)) {
-            if(empty($settings['monitoring-requires-verification-due-to-data-change-key'])) {
-                return "Id of monitoring status field for 'Requires verification due to data change' should not be empty";
-            }
-        }
-
-        if (array_key_exists("monitoring-not-required-key", $settings)) {
-            if(empty($settings['monitoring-not-required-key'])) {
-                return "Id of monitoring status field for 'Not required' should not be empty";
-            }
-        }
-
-        if (array_key_exists("monitoring-verification-in-progress-key", $settings)) {
-            if(empty($settings['monitoring-verification-in-progress-key'])) {
-                return "Id of monitoring status field for 'Verification in progress' should not be empty";
+        $seenIndices = [];
+        foreach ($enumFields as $key => $label) {
+            if (array_key_exists($key, $settings)) {
+                if (empty($settings[$key])) {
+                    return "Id of monitoring status field for '$label' should not be empty";
+                }
+                if (!is_numeric($settings[$key]) || (int)$settings[$key] < 1) {
+                    return "Id for '$label' must be a positive number (the coded value from your dropdown field)";
+                }
+                // Check for duplicate indices
+                $index = (int)$settings[$key];
+                if (in_array($index, $seenIndices)) {
+                    return "Duplicate status index detected for '$label'. Each status must have a unique coded value.";
+                }
+                $seenIndices[] = $index;
             }
         }
 
@@ -206,39 +294,28 @@ hideCommentsButton();
         return null;
     }
 
-    //does the user have the requested role as defined in project set up?
+    // Delegates to RoleManager - checks if user has the requested role
     function userHasRole($roleSettingKey): bool
     {
-        $roleId = $this->getProjectSetting($roleSettingKey);
-        $user = $this->getUser();
-        $rights = $user->getRights();
-
-        return $rights['role_id'] == (int)$roleId;
+        return $this->getRoleManager()->userHasRole($roleSettingKey);
     }
 
+    // Delegates to RoleManager - checks if user has monitor role
     function userHasMonitorRole(): bool
     {
-        return $this->userHasRole('monitoring-role');
+        return $this->getRoleManager()->userHasMonitorRole();
     }
 
+    // Delegates to RoleManager - checks if user has data entry role
     function userHasDataEntryRole(): bool
     {
-        $deRoles = $this->getProjectSetting('data-entry-roles');
-        $user = $this->getUser();
-        $rights = $user->getRights();
-
-        foreach ($deRoles as $role) {
-            if($rights['role_id'] == (int)$role) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->getRoleManager()->userHasDataEntryRole();
     }
 
+    // Delegates to RoleManager - checks if user has data manager role
     function userHasDataManagerRole(): bool
     {
-        return $this->userHasRole('data-manager-role');
+        return $this->getRoleManager()->userHasDataManagerRole();
     }
 
     public function redcap_module_link_check_display($project_id, $link)
@@ -371,13 +448,13 @@ hideCommentsButton();
         $ret = [];
         $nowt = [];
 
-        //get the monitoring field suffix from settings
-        $monitoring_field_suffix = $this->getProjectSetting('monitoring-field-suffix');
+        //get the monitoring field suffix from settings (cached)
+        $monitoring_field_suffix = $this->getCachedProjectSetting('monitoring-field-suffix');
         if (empty($monitoring_field_suffix)) return $nowt;
 
         //this is the name of monitoring field
         //the monitoring field can have any name though must end with the given monitoring field suffix
-        $fields = REDCap::getFieldNames($instrument);
+        $fields = $this->getCachedFieldNames($instrument);
         $monFields = array_filter($fields, function ($field) use ($monitoring_field_suffix) {
             return str_ends_with($field, $monitoring_field_suffix);
         });
@@ -394,8 +471,8 @@ hideCommentsButton();
         $monitorField = reset($monFields);
         $ret["monitorField"] = $monitorField;
 
-        //get the monitor role form settings
-        $monitor_role = $this->getProjectSetting('monitoring-role');
+        //get the monitor role form settings (cached)
+        $monitor_role = $this->getCachedProjectSetting('monitoring-role');
         if (empty($monitor_role))
         {
             //still return the monitorField as needed when new form
@@ -403,8 +480,8 @@ hideCommentsButton();
             return $nowt;
         }
 
-        //get the regex for identifying action tags that should be monitored
-        $regex = $this->getProjectSetting('monitoring-flags-regex');
+        //get the regex for identifying action tags that should be monitored (cached)
+        $regex = $this->getCachedProjectSetting('monitoring-flags-regex');
 
         //add the monitoring form ignore action tag if given
         if (!empty($monitorIgnoreActionTag)) {
@@ -462,274 +539,32 @@ hideCommentsButton();
 
     function addCommonJS(): void
     {
-        $redcapVersion = "redcap_v" . REDCAP_VERSION;
+        // Inject constants for JavaScript use
+        $jsConstants = json_encode([
+            'QUERY_OPEN' => self::QUERY_OPEN,
+            'QUERY_CLOSED' => self::QUERY_CLOSED,
+            'NO_QUERY' => self::NO_QUERY,
+            'RESPONSE_VALUE_UPDATED' => self::RESPONSE_VALUE_UPDATED,
+            'RESPONSE_VALUE_CORRECT' => self::RESPONSE_VALUE_CORRECT,
+            'RESPONSE_SOURCE_UPDATED' => self::RESPONSE_SOURCE_UPDATED,
+            'RESPONSE_MISSING_DATA' => self::RESPONSE_MISSING_DATA,
+        ]);
 
-        echo "<script type='text/javascript'>
-
-//adds an inline monitor query notification
-function highlightFieldIfMonitored(field, query) {
-    let elem = document.querySelector('#label-' + field);
-    if(elem) {
-        const monSpan = document.createElement('span');       
-        monSpan.setAttribute('style', 'padding: 2px; margin-left: 5px; font-weight: normal');
-        
-        const icon = document.createElement('i');
-        icon.classList.add('fas', 'fa-flag', 'mr-3');
-        icon.setAttribute('style', 'color: blue');                
-        const mess = document.createElement('span');
-        mess.setAttribute('style', 'color: blue');
-        let q = query;
-        if(query.length > 50) {
-            q = query.substring(0, 47) + '...';
-        } 
-        mess.textContent = q;
-        
-        monSpan.appendChild(icon);
-        monSpan.appendChild(mess);
-        elem.insertAdjacentElement('beforeend', monSpan);    
-    }    
-}
-
-//changes the monitor status
-//updates the ui and writes to the db
-//reload is required to update ui
-function changeMonitoringStatus(ajaxPath, projectId, eventId, record, field, newStatus, instance, instrument, showProgressSpinner = false) {    
-    
-    let monField = document.querySelector('[name=' + field + ']');
-    monField.value = newStatus;    
-    
-    if(showProgressSpinner) {
-        showProgress(1);
-    }
-    
-    //run the ajax query to update the db    
-    $.post(ajaxPath, 
-    { 
-        projectId: projectId, 
-        eventId: eventId,
-        record: record,
-        monitorField: field,
-        statusInt: newStatus,
-        repeatInstance : instance,
-        instrument : instrument
-    }, function (data) {        
-        console.log('data ' + data.result);        
-    })
-    
-    //reloads the page to refresh ui    
-    window.location.reload();
-}
-
-//writes the query and optionally updates the monitoring status 
-function writeQueryAndChangeStatus(
-    ajaxPath, allQueries, field, pid, instance, 
-    event_id, record, reopen, status, send_back, 
-    newIndex, response, response_requested, instrument,
-    changeMonStatFunc) {
-
-    if(allQueries === 'query closed as verified') {
-
-        const fieldComments = document.querySelectorAll('[id^=\"mon-q-response-comment\"]');
-        let notResponded = false;
-        fieldComments.forEach(function(fieldComment) {
-            if(fieldComment.textContent === 'No response')
-                notResponded = true;
-        });
-
-        if(notResponded) {
-            alert('You cannot verify a query that has no response.');
-            return;
-        }
-    }
-
-    showProgress(1);
-    
-    $.post(app_path_webroot+'DataQuality/data_resolution_popup.php?pid='+pid+'&instance='+instance, 
-        { action: 'save', field_name: field, event_id: event_id, record: record,
-        comment: allQueries,
-        response_requested: response_requested,
-        upload_doc_id: null, 
-        delete_doc_id: null,
-        assigned_user_id: null,
-        assigned_user_id_notify_email: 0,
-        assigned_user_id_notify_messenger: 0,
-        status: status, 
-        send_back: send_back,
-        response: response, 
-        reopen_query: reopen,
-        rule_id: null
-    }, function(data) {
-        if (data === '0') {
-            alert(woops);
-        } else {                  
-            //set the status of the query if function given
-            if(changeMonStatFunc) {               
-                changeMonStatFunc(ajaxPath, pid, event_id, record, field, newIndex, instance, instrument);
-            }
-        }
-    })
-}
-
-//hides the monitoring field icons
-function hideMonitoringStatusField(monitorField) {
-    document.querySelector('#' + monitorField + '-tr').classList.add('@HIDDEN');
-}
-
-//hides the cancel button row when it's not applicable to the role logged in
-function hideCancelButtonRow() {       
-    let cancelButtonRow = document.querySelector('[value=\'-- Cancel --\']');
-    if(cancelButtonRow) {
-        cancelButtonRow.parentElement.parentElement.parentElement;
-        cancelButtonRow.style.display = 'none';    
-    }
-}
-
-function makeFieldsReadonly(fields, monitorField) {    
-    fields.forEach(function(field) {
-        //exclude monitor field and _complete field
-        if(field !== monitorField && !field.endsWith('_complete')) {
-            document.querySelector('#' + field + '-tr').classList.add('@READONLY');                
-        }       
-    })
-}
-
-//shows the monitor query status - i.e. whether the query on the monitor field is open or closed
-//also shows the actual monitor query value - e.g. verified, requires verification due to data change etc. 
-function showMonitoringStatus(currentQueryStatus, monStatusValue) {
-    
-    let elem = document.querySelector('.formtbody');
-    if(elem) {        
-        const tr = document.createElement('tr');
-        
-        tr.classList.add('labelrc');        
-        const td1 = document.createElement('td');
-        td1.setAttribute('style', 'padding-top: 10px; padding-bottom: 10px;');        
-        const monSpan = document.createElement('span');
-        monSpan.setAttribute('style', 'padding: 2px; margin-left: 5px; font-weight: normal; margin-top: 5px;');        
-        const mess = document.createElement('span');
-        
-        let col = 'blue';
-        if(currentQueryStatus === 'CLOSED') {
-            col = 'green';
-        }
-        
-        mess.setAttribute('style', 'color: ' + col + ';');
-        mess.textContent = 'Monitor query status: ' + currentQueryStatus;
-        
-        const icon = document.createElement('i');
-        icon.classList.add('fas', 'fa-flag', 'mr-3');
-        icon.setAttribute('style', 'color: ' + col + ';');
-                
-        monSpan.appendChild(icon);
-        monSpan.appendChild(mess);
-        td1.appendChild(monSpan);
-        tr.appendChild(td1);
-        
-        const td2 = document.createElement('td');
-        const monSpan2 = document.createElement('span');
-        const icon2 = document.createElement('i');
-        icon2.classList.add('fas', 'fa-clipboard-question', 'mr-3');
-        
-        let valCol = 'blue';
-        if(monStatusValue === 'Verified' || monStatusValue === 'Not required') {
-            valCol = 'green';
-        }
-        
-        icon2.setAttribute('style', 'color: ' + valCol + ';');        
-        const mess2 = document.createElement('span');        
-        mess2.textContent = monStatusValue;
-        td2.setAttribute('style', 'color: ' + valCol + '; font-weight: normal');
-        
-        //fix to stop the icon showing on its own when there is no resolution status
-        //the parts are created so could be improved but this is sufficient and has no impact on performance
-        if(monStatusValue) {
-            monSpan2.appendChild(icon2);
-            monSpan2.appendChild(mess2);            
-        }
-        
-        //need to still append the td2 to keep the style consistent
-        td2.appendChild(monSpan2);                                    
-        tr.appendChild(td2);
-        
-        //add a monitoring section header
-        const monSectionHeaderRow = document.createElement('tr');
-        const monSectHeaderCell = document.createElement('td');        
-        monSectHeaderCell.className = 'header';
-        monSectHeaderCell.setAttribute('colspan', '2');        
-        // Create the inner div
-        const div = document.createElement('div');    
-        div.setAttribute('data-mlm-type', 'header');
-        div.textContent = 'Form Status';        
-        // Append div to td
-        monSectHeaderCell.appendChild(div);            
-        monSectHeaderCell.textContent = 'Monitoring Status';
-        
-        //add header
-        monSectionHeaderRow.appendChild(monSectHeaderCell);
-        elem.insertAdjacentElement('beforeend', monSectionHeaderRow);       
-        
-        //add monitoring info
-        elem.insertAdjacentElement('beforeend', tr);
-    }      
-}
-
-//sets the monitoring status to the given value (note: newValue is id)
-function setMonitoringStatus(monitorField, newValue) {
-    
-    //change the status
-    let sel = '#' + monitorField + '-tr select';
-    let ele = document.querySelector(sel);
-    ele.value = newValue;
-    
-    //alert the user
-    const userAlert = document.createElement('small');    
-    userAlert.classList = 'text-success';
-    userAlert.innerHTML = '<div>status set automatically to ' + newValue + '</div>';
-
-    ele.insertAdjacentElement('afterend', userAlert);
-}
-
-function showHistory() {
-    let showHistButton = document.getElementById('show-hide-history-button');    
-    if(showHistButton.textContent === 'Show history') {
-        document.getElementById('form-query-history').style.display = 'block';
-        showHistButton.textContent = 'Hide history';
-    } else {
-        document.getElementById('form-query-history').style.display = 'none';
-        showHistButton.textContent = 'Show history';
-    }
-}
-
-function addHistoryButton(showHistory) {
-    document.addEventListener('DOMContentLoaded', function() {
-        let elem = document.querySelector('.formtbody');
-        if (elem) {
-            // Create a new <td> element
-            const tr = document.createElement('tr');
-            tr.classList.add('labelrc');
-            const td1 = document.createElement('td');
-            td1.setAttribute('style', 'padding-top: 10px; padding-bottom: 10px;');
-            const td2 = document.createElement('td');
-            td2.setAttribute('style', 'padding-top: 10px; padding-bottom: 10px;');
-            td2.innerHTML = showHistory;
-            tr.appendChild(td1);
-            tr.appendChild(td2);
-            elem.appendChild(tr);
-        }
-    });
-}
-
-</script>";
+        // Inject constants first, then load external JS file
+        echo "<script type='text/javascript'>const MonQR = $jsConstants;</script>";
+        echo '<script src="' . $this->getUrl('js/monitoring-qr.js') . '"></script>';
     }
 
     //highlights fields with queries by calling javascript function
     function highlightInline($projSetting, $lastQualHistEntry): void
     {
-        //call the js to show the inline queries where set to be shown for monitors
-        if ($this->getProjectSetting($projSetting)) {
+        //call the js to show the inline queries where set to be shown for monitors (cached)
+        if ($this->getCachedProjectSetting($projSetting)) {
             $queryJson = json_decode($lastQualHistEntry["comment"]);
             foreach ($queryJson as $json) {
-                echo "<script type='text/javascript'> highlightFieldIfMonitored(\"$json->field\",\"$json->query\")</script>";
+                $safeField = self::jsEncode($json->field);
+                $safeQuery = self::jsEncode($json->query);
+                echo "<script type='text/javascript'> highlightFieldIfMonitored($safeField,$safeQuery)</script>";
             }
         }
     }
@@ -742,10 +577,10 @@ function addHistoryButton(showHistory) {
         $rows = "";
         $queryData = [];
 
-        //get setting to include or exclude non-flagged fields
-        $excludeNonFlagged = $this->getProjectSetting('monitors-only-query-flagged-fields');
-        //get setting to include or not the field label alongside the field name
-        $includeFieldLabel = $this->getProjectSetting('include-field-label-in-inline-form');
+        //get setting to include or exclude non-flagged fields (cached)
+        $excludeNonFlagged = $this->getCachedProjectSetting('monitors-only-query-flagged-fields');
+        //get setting to include or not the field label alongside the field name (cached)
+        $includeFieldLabel = $this->getCachedProjectSetting('include-field-label-in-inline-form');
 
         //create content rows
         foreach (array_keys($formInfo["formInfo"]) as $field) {
@@ -787,7 +622,7 @@ function addHistoryButton(showHistory) {
             //add the row as required by role and current status
             if ($isMonitor) {
                 switch ($currentQueryStatus) {
-                    case "OPEN":
+                    case self::QUERY_OPEN:
                         if (!empty($fieldInfo["query"])) {
                             if ($fieldInfo["response"] == null || $fieldInfo["response"] == "") {
                                 $respAndComment = "";
@@ -825,7 +660,7 @@ function addHistoryButton(showHistory) {
 
                         break;
                     case self::NO_QUERY:
-                    case "CLOSED":
+                    case self::QUERY_CLOSED:
                         //monitors-only-query-flagged-fields
                         $rows .= "<tr>
                         <td style='padding: 5px'>$fieldTxt</td>
@@ -839,7 +674,7 @@ function addHistoryButton(showHistory) {
             } else {
                 //the user is either a data entry user and can respond, or the user is a data manager who can only
                 //respond if the config option to do so is set
-                if ($currentQueryStatus == "OPEN") {
+                if ($currentQueryStatus == self::QUERY_OPEN) {
                     if (!empty($fieldInfo["query"])) {
 
                         $rows .= "<tr>
@@ -850,7 +685,7 @@ function addHistoryButton(showHistory) {
                         ";
 
                         //determines whether data managers can also respond to a query - default is not
-                        $allowDMToRespondToQueries = $this->getProjectSetting("allow-data-managers-to-respond-to-queries");
+                        $allowDMToRespondToQueries = $this->getCachedProjectSetting("allow-data-managers-to-respond-to-queries");
 
                         //if the user is a data manager and the option to allow dms to respond is true, OR the user
                         //is not a dm (i.e. they are data entry user) then include the response options
@@ -887,18 +722,18 @@ function addHistoryButton(showHistory) {
                         });                        
                     }
 
-                    function changeCommentAvailability(srcFld) {                                                                
-                        let choice = document.getElementById('mon-q-response-' + srcFld);      
+                    function changeCommentAvailability(srcFld) {
+                        let choice = document.getElementById('mon-q-response-' + srcFld);
                         let comm = document.getElementById('mon-q-response-comment-' + srcFld);
                             if(choice && comm) {
-                                if(choice.value === 'Value correct, error in source updated' || choice.value === 'Missing data not done') {
+                                if(choice.value === MonQR.RESPONSE_SOURCE_UPDATED || choice.value === MonQR.RESPONSE_MISSING_DATA) {
                                 comm.style.display = 'block';
                             } else {
-                                comm.value = '';                            
+                                comm.value = '';
                                 comm.style.display = 'none';
-                            }    
+                            }
                         }
-                        
+
                     }                                                        
                 </script>";
 
@@ -921,7 +756,7 @@ function addHistoryButton(showHistory) {
         //prefix with header
         if ($isMonitor) {
             switch ($currentQueryStatus) {
-                case "OPEN":
+                case self::QUERY_OPEN:
                     if (!empty($rows)) {
                         $header = "<tr>
                         <th style='width: 20%;padding: 5px'><strong>$fieldHeader</strong></th>
@@ -933,7 +768,7 @@ function addHistoryButton(showHistory) {
                     }
                     break;
                 case self::NO_QUERY:
-                case "CLOSED":
+                case self::QUERY_CLOSED:
                     $header = "<tr>
                         <th style='width: 20%;padding: 5px'><strong>$fieldHeader</strong></th>
                         <th style='width: 40%;padding: 5px'><strong>Flags</strong></th>
@@ -942,7 +777,7 @@ function addHistoryButton(showHistory) {
             }
         } else {
             switch ($currentQueryStatus) {
-                case "OPEN":
+                case self::QUERY_OPEN:
                     if (!empty($rows)) {
                         $header = "<tr>
                         <th style='width: 20%;padding: 5px'><strong>$fieldHeader</strong></th>
@@ -953,7 +788,7 @@ function addHistoryButton(showHistory) {
                     }
                     break;
                 case self::NO_QUERY:
-                case "CLOSED":
+                case self::QUERY_CLOSED:
                     $header = "<tr>
                         <th style='width: 20%;padding: 5px'><strong>$fieldHeader</strong></th>
                         </tr>";
@@ -976,11 +811,11 @@ function addHistoryButton(showHistory) {
     {
         //current user is a monitor
 
-        $verReqDueChange = $this->getProjectSetting('monitoring-requires-verification-due-to-data-change-key');
-        $verifiedCompletedIndex = $this->getProjectSetting('monitoring-field-verified-key');
-        $verificationInProgressIndex = $this->getProjectSetting('monitoring-verification-in-progress-key');
-        $verificationNotRequiredIndex = $this->getProjectSetting('monitoring-not-required-key');
-        $verRequired = $this->getProjectSetting('monitoring-requires-verification-key');
+        $verReqDueChange = $this->getCachedProjectSetting('monitoring-requires-verification-due-to-data-change-key');
+        $verifiedCompletedIndex = $this->getCachedProjectSetting('monitoring-field-verified-key');
+        $verificationInProgressIndex = $this->getCachedProjectSetting('monitoring-verification-in-progress-key');
+        $verificationNotRequiredIndex = $this->getCachedProjectSetting('monitoring-not-required-key');
+        $verRequired = $this->getCachedProjectSetting('monitoring-requires-verification-key');
         $ajaxPath = $this->getUrl("MonQR_ajax.php");
         $qualHist = $formInfo["qualHist"];
 
@@ -995,7 +830,7 @@ function addHistoryButton(showHistory) {
         $showHistory = self::ShowHistory;
 
         //if a query has never been opened or is currently closed, give opportunity to create or reopen
-        if ($currentQueryStatus == "CLOSED" || $currentQueryStatus == self::NO_QUERY) {
+        if ($currentQueryStatus == self::QUERY_CLOSED || $currentQueryStatus == self::NO_QUERY) {
             //no history to show if new query
             if ($currentQueryStatus == self::NO_QUERY) {
                 $showHistory = "";
@@ -1036,8 +871,8 @@ function raiseVerificationQuery(ajaxPath, queryContent, field, pid, instance, ev
             $requiresVerDueToChange = $formInfo["formInfo"][$formInfo["monitorField"]]["fieldValue"] == $verReqDueChange;
             $requiresVer = $formInfo["formInfo"][$formInfo["monitorField"]]["fieldValue"] == $verRequired;
 
-            $onlyQueryFlaggedFields = $this->getProjectSetting("monitors-only-query-flagged-fields");
-            if ($currentQueryStatus == "CLOSED") {
+            $onlyQueryFlaggedFields = $this->getCachedProjectSetting("monitors-only-query-flagged-fields");
+            if ($currentQueryStatus == self::QUERY_CLOSED) {
                 if ($requiresVerDueToChange) {
                     $mess = "This form has been previously queried and the query closed, but verification is required again due to a data change. Use the buttons to confirm the verification status or raise a further query.";
                 } else {
@@ -1066,16 +901,28 @@ function raiseVerificationQuery(ajaxPath, queryContent, field, pid, instance, ev
 
             $reopen = count($qualHist) > 0 ? 1 : 0;
 
+            // Encode values for safe use in HTML attributes
+            $safeAjaxPath = self::attrEncode($ajaxPath);
+            $safeRecord = self::attrEncode($record);
+            $safeMonitorField = self::attrEncode($monitorField);
+            $safeInstrument = self::attrEncode($instrument);
+
             //check if current value is 'requires validation' due to data change, allow the monitor to close
             //as verified not required, or open afresh
             $moreButtons =
                 $requiresVerDueToChange || $requiresVer
                     ? "<button class='btn btn-secondary btn-xs ml-3' type='button'
-        onclick='changeMonitoringStatus(\"$ajaxPath\", $project_id, $event_id, \"$record\", \"$monitorField\", $verificationNotRequiredIndex, $repeat_instance, \"$instrument\", true )'>
+        data-ajax-path='$safeAjaxPath' data-project-id='$project_id' data-event-id='$event_id'
+        data-record='$safeRecord' data-monitor-field='$safeMonitorField' data-status='$verificationNotRequiredIndex'
+        data-repeat-instance='$repeat_instance' data-instrument='$safeInstrument'
+        onclick='changeMonitoringStatus(this.dataset.ajaxPath, this.dataset.projectId, this.dataset.eventId, this.dataset.record, this.dataset.monitorField, this.dataset.status, this.dataset.repeatInstance, this.dataset.instrument, true)'>
         Close as not required
     </button>
     <button class='btn btn-secondary btn-xs ml-3' type='button'
-        onclick='changeMonitoringStatus(\"$ajaxPath\", $project_id, $event_id, \"$record\", \"$monitorField\", $verifiedCompletedIndex, $repeat_instance, \"$instrument\", true )'>
+        data-ajax-path='$safeAjaxPath' data-project-id='$project_id' data-event-id='$event_id'
+        data-record='$safeRecord' data-monitor-field='$safeMonitorField' data-status='$verifiedCompletedIndex'
+        data-repeat-instance='$repeat_instance' data-instrument='$safeInstrument'
+        onclick='changeMonitoringStatus(this.dataset.ajaxPath, this.dataset.projectId, this.dataset.eventId, this.dataset.record, this.dataset.monitorField, this.dataset.status, this.dataset.repeatInstance, this.dataset.instrument, true)'>
         Close as verified
     </button>"
                     : "";
@@ -1087,14 +934,14 @@ function raiseVerificationQuery(ajaxPath, queryContent, field, pid, instance, ev
 <div class='d-flex justify-content-end mt-3 mb-2'>
     $moreButtons
     <button class='btn btn-secondary btn-xs ml-5' type='button' id='raise-query-btn'
-        data-ajax-path='$ajaxPath'
+        data-ajax-path='$safeAjaxPath'
         data-query-content='$sdvText'
-        data-monitor-field='$monitorField'
+        data-monitor-field='$safeMonitorField'
         data-project-id='$project_id'
         data-repeat-instance='$repeat_instance'
         data-event-id='$event_id'
-        data-record='$record'
-        data-instrument='$instrument'
+        data-record='$safeRecord'
+        data-instrument='$safeInstrument'
         data-reopen='$reopen'
         data-ver-in-progress='$verificationInProgressIndex'
         onclick='raiseVerificationQuery(
@@ -1114,7 +961,7 @@ function raiseVerificationQuery(ajaxPath, queryContent, field, pid, instance, ev
 </div>";
 
 
-        } elseif ($currentQueryStatus == "OPEN") {
+        } elseif ($currentQueryStatus == self::QUERY_OPEN) {
 
             //check if a response has been previously given
             $responses = [];
@@ -1163,8 +1010,8 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
         let allQueries = JSON.stringify(queries);        
         //apply the changes to db and ui
         writeQueryAndChangeStatus(
-            ajaxPath, allQueries, field, pid, instance, 
-            event_id, record, 'OPEN', null, 1, 
+            ajaxPath, allQueries, field, pid, instance,
+            event_id, record, MonQR.QUERY_OPEN, null, 1,
             verInProgressIndex, null, 1, instrument, changeMonitoringStatus)
     }
     else {
@@ -1180,18 +1027,24 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
             $queryData = $rowsAndQueryContent["queryData"];
             $escaped = htmlspecialchars(json_encode($queryData), ENT_QUOTES, 'UTF-8');
 
+            // Encode values for safe use in HTML attributes
+            $safeAjaxPath = self::attrEncode($ajaxPath);
+            $safeRecord = self::attrEncode($record);
+            $safeMonitorField = self::attrEncode($monitorField);
+            $safeInstrument = self::attrEncode($instrument);
+
             //include the send back button if responses have been received
             $sendBackButton =
                 $hasResponse && !$waitingForResponse
                     ? "<button class='ml-4 btn btn-secondary btn-xs' type='button' id='send-back-btn'
-                    data-ajax-path='$ajaxPath'
+                    data-ajax-path='$safeAjaxPath'
                     data-query-content='$escaped'
-                    data-monitor-field='$monitorField'
+                    data-monitor-field='$safeMonitorField'
                     data-project-id='$project_id'
                     data-repeat-instance='$repeat_instance'
                     data-event-id='$event_id'
-                    data-record='$record'
-                    data-instrument='$instrument'
+                    data-record='$safeRecord'
+                    data-instrument='$safeInstrument'
                     data-ver-in-progress='$verificationInProgressIndex'
                     onclick=\"sendBackForFurtherAttention(
                         this.getAttribute('data-ajax-path'),
@@ -1212,12 +1065,17 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
             $endContent = "
 <div class='d-flex justify-content-end mt-3 mb-2'>
 <button class='ml-5 btn btn-secondary btn-xs' type='button'
-    onclick='writeQueryAndChangeStatus(
-        \"$ajaxPath\",\"query closed as not required\", \"$monitorField\", \"$project_id\", $repeat_instance, \"$event_id\", \"$record\", 0, \"CLOSED\", 0, $verificationNotRequiredIndex, null, 1, \"$instrument\", changeMonitoringStatus)'>
+    data-ajax-path='$safeAjaxPath' data-monitor-field='$safeMonitorField' data-project-id='$project_id'
+    data-repeat-instance='$repeat_instance' data-event-id='$event_id' data-record='$safeRecord'
+    data-status='$verificationNotRequiredIndex' data-instrument='$safeInstrument'
+    onclick='writeQueryAndChangeStatus(this.dataset.ajaxPath, \"query closed as not required\", this.dataset.monitorField, this.dataset.projectId, this.dataset.repeatInstance, this.dataset.eventId, this.dataset.record, 0, \"CLOSED\", 0, this.dataset.status, null, 1, this.dataset.instrument, changeMonitoringStatus)'>
     Close as not required
 </button>
 <button class='ml-4 btn btn-secondary btn-xs' type='button'
-    onclick='writeQueryAndChangeStatus(\"$ajaxPath\",\"query closed as verified\", \"$monitorField\", \"$project_id\", $repeat_instance, \"$event_id\", \"$record\", 0, \"CLOSED\", 0, $verifiedCompletedIndex, null, 1, \"$instrument\", changeMonitoringStatus)'>
+    data-ajax-path='$safeAjaxPath' data-monitor-field='$safeMonitorField' data-project-id='$project_id'
+    data-repeat-instance='$repeat_instance' data-event-id='$event_id' data-record='$safeRecord'
+    data-status='$verifiedCompletedIndex' data-instrument='$safeInstrument'
+    onclick='writeQueryAndChangeStatus(this.dataset.ajaxPath, \"query closed as verified\", this.dataset.monitorField, this.dataset.projectId, this.dataset.repeatInstance, this.dataset.eventId, this.dataset.record, 0, \"CLOSED\", 0, this.dataset.status, null, 1, this.dataset.instrument, changeMonitoringStatus)'>
     Close as verified
 </button>
 $sendBackButton
@@ -1251,11 +1109,11 @@ $sendBackButton
                         $formInfo, $currMonStatValue, $monitorField, $currentQueryStatus, $lastQualHistEntry,
                         $isDataEntry, $isDataManager, $monitorIgnoreActionTag, $instrument): array
     {
-        $requireVerKey = (int)$this->getProjectSetting("monitoring-requires-verification-key");
-        $notRequireVerKey = (int)$this->getProjectSetting("monitoring-not-required-key");
+        $requireVerKey = (int)$this->getCachedProjectSetting("monitoring-requires-verification-key");
+        $notRequireVerKey = (int)$this->getCachedProjectSetting("monitoring-not-required-key");
 
         //determines whether data managers can also respond to a query - default is not
-        $allowDMToRespondToQueries = $this->getProjectSetting("allow-data-managers-to-respond-to-queries");
+        $allowDMToRespondToQueries = $this->getCachedProjectSetting("allow-data-managers-to-respond-to-queries");
 
         $flaggedFields = $formInfo["flaggedFields"];
         $ajaxPath = $this->getUrl("MonQR_ajax.php");
@@ -1282,7 +1140,7 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
                 emptyResponse = false;
             }
 
-            if(resp.value === 'Value correct, error in source updated' || resp.value === 'Missing data not done') {
+            if(resp.value === MonQR.RESPONSE_SOURCE_UPDATED || resp.value === MonQR.RESPONSE_MISSING_DATA) {
                 let comm = document.getElementById('mon-q-response-comment-' + item.field);
                 //only add the comment if comment has a value
                 if(comm && comm.value) {                    
@@ -1314,7 +1172,7 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
         $endContent = "";
         $monStatSetTo = 0;
 
-        if ($currentQueryStatus == "OPEN") {
+        if ($currentQueryStatus == self::QUERY_OPEN) {
             //even if open, a response may have been sent. if already sent shouldn't be able to resend
 
             //check if last response is OTHER and the json contains at least one response
@@ -1376,7 +1234,7 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
             //highlight inline if requested
             $showInlineForRole = $isDataEntry ? "data-entry-role-show-inline" : "data-manager-role-show-inline";
             self::highlightInline($showInlineForRole, $lastQualHistEntry);
-        } elseif ($currentQueryStatus == "CLOSED") {
+        } elseif ($currentQueryStatus == self::QUERY_CLOSED) {
             $mess = "";
         } elseif ($currentQueryStatus == self::NO_QUERY) {
             //form has no query history
@@ -1392,13 +1250,14 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
                     : 0;
 
                 //no flagged fields so set status to not required
+                $safeMonField = self::jsEncode($monitorField);
                 if ($flaggedNotIgnoredCount == 0) {
-                    echo "<script type='text/javascript'>setMonitoringStatus(\"$monitorField\", $notRequireVerKey);</script>";
+                    echo "<script type='text/javascript'>setMonitoringStatus($safeMonField, $notRequireVerKey);</script>";
                     $monStatSetTo = $notRequireVerKey;
                     $mess = "No monitoring queries expected as the form has no flagged fields";
                 } else {
                     //flagged fields exist so set status to requires monitoring
-                    echo "<script type='text/javascript'>setMonitoringStatus(\"$monitorField\", $requireVerKey);</script>";
+                    echo "<script type='text/javascript'>setMonitoringStatus($safeMonField, $requireVerKey);</script>";
                     $monStatSetTo = $requireVerKey;
                     $plural = $flaggedNotIgnoredCount == 1 ? "" : "s";
                     $mess = "Expecting monitoring queries to be raised due to $flaggedNotIgnoredCount flagged field$plural";
@@ -1505,25 +1364,53 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
     }
 
     /**
-     * @throws Exception
+     * Hook: Injects monitoring UI into data entry forms
      */
     public function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance)
     {
         if (empty($project_id)) return;
 
+        try {
+            $this->processDataEntryForm($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            $this->log("Error in redcap_data_entry_form", [
+                "error" => $e->getMessage(),
+                "record" => $record,
+                "instrument" => $instrument,
+                "event_id" => $event_id
+            ]);
+
+            // Show a user-friendly message
+            echo "<div class='red' style='padding: 10px; margin: 10px 0;'>
+                <strong>Monitoring QR Module Error:</strong> An error occurred loading the monitoring interface.
+                Please contact your administrator if this persists.
+                </div>";
+        }
+    }
+
+    /**
+     * Processes the data entry form for monitoring UI
+     * @throws \Exception
+     */
+    private function processDataEntryForm($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance)
+    {
+        // Preload all settings to reduce database round-trips
+        $this->preloadProjectSettings();
+
         // Retrieve the mandatory fields for the external module from the configuration settings
-        $monFieldSuffix = $this->getProjectSetting("monitoring-field-suffix");
-        $monFlagRegex = $this->getProjectSetting("monitoring-flags-regex");
-        $monRole = $this->getProjectSetting("monitoring-role");
-        $deRoles = $this->getProjectSetting("data-entry-roles");
-        $dmRole = $this->getProjectSetting("data-manager-role");
-        $idVerified = $this->getProjectSetting("monitoring-field-verified-key");
-        $idRequiresVerification = $this->getProjectSetting("monitoring-requires-verification-key");
-        $idVerificationDataChange = $this->getProjectSetting("monitoring-requires-verification-due-to-data-change-key");
-        $idNotRequired = $this->getProjectSetting("monitoring-not-required-key");
-        $idVerficationInProgress = $this->getProjectSetting("monitoring-verification-in-progress-key");
-        $triggerRequiresVerification = $this->getProjectSetting("trigger-requires-verification-for-change");
-        $resolveIssues = $this->getProjectSetting("resolve-issues-behaviour");
+        $monFieldSuffix = $this->getCachedProjectSetting("monitoring-field-suffix");
+        $monFlagRegex = $this->getCachedProjectSetting("monitoring-flags-regex");
+        $monRole = $this->getCachedProjectSetting("monitoring-role");
+        $deRoles = $this->getCachedProjectSetting("data-entry-roles");
+        $dmRole = $this->getCachedProjectSetting("data-manager-role");
+        $idVerified = $this->getCachedProjectSetting("monitoring-field-verified-key");
+        $idRequiresVerification = $this->getCachedProjectSetting("monitoring-requires-verification-key");
+        $idVerificationDataChange = $this->getCachedProjectSetting("monitoring-requires-verification-due-to-data-change-key");
+        $idNotRequired = $this->getCachedProjectSetting("monitoring-not-required-key");
+        $idVerficationInProgress = $this->getCachedProjectSetting("monitoring-verification-in-progress-key");
+        $triggerRequiresVerification = $this->getCachedProjectSetting("trigger-requires-verification-for-change");
+        $resolveIssues = $this->getCachedProjectSetting("resolve-issues-behaviour");
 
          //if the mandatory fields are not set, then do nothing
         if (empty($monFieldSuffix) || empty($monFlagRegex) || empty($monRole) || empty($deRoles[0]) || empty($dmRole)
@@ -1541,7 +1428,7 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
         global $Proj;
 
         //get the action tag for ignoring fields
-        $monitorIgnoreActionTag = $this->getProjectSetting('ignore-for-monitoring-action-tag');
+        $monitorIgnoreActionTag = $this->getCachedProjectSetting('ignore-for-monitoring-action-tag');
 
         //add the js and hide the monitoring field early in case early return
         //hiding the field should still happen
@@ -1554,9 +1441,10 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
         //auto hide the monitoring status field so can't be interacted with by anyone
         //monitoring field suffix is always given unless there's an error
         $monitorField = $formInfo["monitorField"];
+        $safeMonitorField = self::jsEncode($monitorField);
 
         echo "<script type='text/javascript'>
-hideMonitoringStatusField('$monitorField');
+hideMonitoringStatusField($safeMonitorField);
 </script>";
 
         //bomb out here though unless some fields have been returned
@@ -1582,7 +1470,7 @@ hideMonitoringStatusField('$monitorField');
             $fields = json_encode($formInfo["fields"]);
 
             //turn off default hiding of cancel row when checked
-            $dontHideSaveAndCancel = $this->getProjectSetting("do-not-hide-save-and-cancel-buttons-for-non-data-entry");
+            $dontHideSaveAndCancel = $this->getCachedProjectSetting("do-not-hide-save-and-cancel-buttons-for-non-data-entry");
             if(!$dontHideSaveAndCancel) {
                 echo "<script type='text/javascript'>
 //auto hide the cancel button unless the user is data entry user
@@ -1593,11 +1481,11 @@ hideCancelButtonRow();
             //turn off default of making all fields (except monitor and form status) readonly when checked
             //NOTE: the same sort of effect can be applied using built in permissions, though the advantage of
             //doing it this way is that form status and monitoring status can be excluded and remain editable
-            $dontMakeReadOnly = $this->getProjectSetting("do-not-make-fields-readonly");
+            $dontMakeReadOnly = $this->getCachedProjectSetting("do-not-make-fields-readonly");
             if(!$dontMakeReadOnly) {
                 echo "<script type='text/javascript'>
 //make all fields readonly
-makeFieldsReadonly($fields, '$monitorField');
+makeFieldsReadonly($fields, $safeMonitorField);
 </script>";
             }
         }
@@ -1645,8 +1533,10 @@ makeFieldsReadonly($fields, '$monitorField');
             }
 
             //only shows the monitoring status if there are values - i.e. if new form doesn't show
+            $safeQueryStatus = self::jsEncode($currentQueryStatus);
+            $safeMonStatString = self::jsEncode($currentMonStatString);
             echo "<script type='text/javascript'>
-    showMonitoringStatus('$currentQueryStatus', '$currentMonStatString');
+    showMonitoringStatus($safeQueryStatus, $safeMonStatString);
     </script>";
         }
 
@@ -1668,11 +1558,35 @@ makeFieldsReadonly($fields, '$monitorField');
     }
 
     /**
-     * @throws Exception
+     * Hook: Handles monitoring status updates when records are saved
      */
     function redcap_save_record_mon_qr($changedFields, $project_id, $record, $instrument, $event_id,
                                  $group_id, $survey_hash, $response_id, $repeat_instance): void
     {
+        try {
+            $this->processSaveRecordMonQr($changedFields, $project_id, $record, $instrument, $event_id,
+                $group_id, $survey_hash, $response_id, $repeat_instance);
+        } catch (\Exception $e) {
+            // Log the error but don't disrupt the save process
+            $this->log("Error in redcap_save_record_mon_qr", [
+                "error" => $e->getMessage(),
+                "record" => $record,
+                "instrument" => $instrument,
+                "event_id" => $event_id
+            ]);
+        }
+    }
+
+    /**
+     * Processes monitoring status updates when records are saved
+     * @throws \Exception
+     */
+    private function processSaveRecordMonQr($changedFields, $project_id, $record, $instrument, $event_id,
+                                 $group_id, $survey_hash, $response_id, $repeat_instance): void
+    {
+        // Preload all settings to reduce database round-trips
+        $this->preloadProjectSettings();
+
         /*
             - requires a new hook in Hooks.php and new call to new hook in DataEntry.php
             - only applies if the form contains a monitor field and if the current status is verified
@@ -1686,9 +1600,9 @@ makeFieldsReadonly($fields, '$monitorField');
          */
 
         //get the index for setting the monitoring back to requiring verification due to data change
-        $requireVerDataChangeKey = (int)$this->getProjectSetting("monitoring-requires-verification-due-to-data-change-key");
+        $requireVerDataChangeKey = (int)$this->getCachedProjectSetting("monitoring-requires-verification-due-to-data-change-key");
         //get the action tag for ignoring fields
-        $monitorIgnoreActionTag = $this->getProjectSetting('ignore-for-monitoring-action-tag');
+        $monitorIgnoreActionTag = $this->getCachedProjectSetting('ignore-for-monitoring-action-tag');
 
         $formInfo = $this->getFormInfo($project_id, $instrument, $record, $event_id, $repeat_instance, $monitorIgnoreActionTag);
         if(!$formInfo) {
@@ -1702,7 +1616,7 @@ makeFieldsReadonly($fields, '$monitorField');
 
         //if the current value is not 'verified' then we shouldn't change it so return
         //index meaning form is verified
-        $isVerifiedKey = (int)$this->getProjectSetting("monitoring-field-verified-key");
+        $isVerifiedKey = (int)$this->getCachedProjectSetting("monitoring-field-verified-key");
         //current status of monitor field
         $currVerIndex = (int)$formInfo["formInfo"][$monitorField]["fieldValue"];
         if($currVerIndex != $isVerifiedKey) {
@@ -1711,7 +1625,7 @@ makeFieldsReadonly($fields, '$monitorField');
         }
 
         //only gets here if the field is marked as verified
-        $trigger = $this->getProjectSetting("trigger-requires-verification-for-change");
+        $trigger = $this->getCachedProjectSetting("trigger-requires-verification-for-change");
 
         //the trigger is never so stop
         if($trigger == "never") {
@@ -1720,7 +1634,7 @@ makeFieldsReadonly($fields, '$monitorField');
 
         //do nothing if the field being updated is the _complete field or monitoring field, or is ignored by monitoring flag
         //iterate list of changed fields and remove if meet the above criteria
-        $monFieldSuffix = $this->getProjectSetting("monitoring-field-suffix");
+        $monFieldSuffix = $this->getCachedProjectSetting("monitoring-field-suffix");
 
         //remove _complete and monitor field
         $validChangedFields = array_filter($changedFields, function ($fld) use ($monitorIgnoreActionTag, $monFieldSuffix) {
@@ -1846,20 +1760,27 @@ makeFieldsReadonly($fields, '$monitorField');
             'normal'
         );
 
-        //raise a log entry if errors or warnings
-        if(!empty($resp["errors"]) || !empty($resp["warnings"])){
-            $data = [];
+        // Check for errors and log/throw as appropriate
+        if (!empty($resp["errors"])) {
+            $errorData = [
+                "errors" => json_encode($resp["errors"]),
+                "record" => $record,
+                "instrument" => $instrument,
+                "monitorField" => $monitorField,
+                "status" => $requireVerDataChangeKey
+            ];
+            $module->log("setMonitorStatus failed to write saveData with errors", $errorData);
 
-            if(!empty($resp["errors"])){
-                $data["errors"] = json_encode($resp["errors"]);
-            }
+            throw new \Exception("Failed to save monitor status: " . implode(', ', (array)$resp["errors"]));
+        }
 
-            if(!empty($resp["warnings"])){
-                $data["warnings"] = json_encode($resp["warnings"]);
-            }
-
-            $module->log("setMonitorStatus failed to write saveData with errors or warnings", $data);
-            $module->log("setMonitorStatus failed - sent data", $json);
+        // Log warnings but don't fail the operation
+        if (!empty($resp["warnings"])) {
+            $module->log("setMonitorStatus completed with warnings", [
+                "warnings" => json_encode($resp["warnings"]),
+                "record" => $record,
+                "instrument" => $instrument
+            ]);
         }
     }
 
@@ -1891,10 +1812,10 @@ makeFieldsReadonly($fields, '$monitorField');
         $openResponded = $lang['dataqueries_188'];
         $closed = $lang['dataqueries_189'];
 
-        $monFieldSuffix = $this->getProjectSetting("monitoring-field-suffix");
+        $monFieldSuffix = $this->getCachedProjectSetting("monitoring-field-suffix");
         $regex = "/\w+$monFieldSuffix/";
 
-        $rowBehaviour = $this->getProjectSetting("resolve-issues-behaviour");
+        $rowBehaviour = $this->getCachedProjectSetting("resolve-issues-behaviour");
         if($rowBehaviour == "hiding-button"){
             $hideFunction = "keepMonitorRowsButHideButton";
         } else {

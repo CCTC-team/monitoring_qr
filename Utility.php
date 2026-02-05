@@ -129,19 +129,23 @@ class Utility
     //converts a given date string to the given format or default format if no format given
     public static function DateStringAsDateTime(?string $date, ?string $format = null) : ?DateTime
     {
-        if($date == null) return null;
+        if($date === null || trim($date) === '') return null;
 
-        $formatToUse = $format == null ? self::UserDateTimeFormatNoSeconds(): $format;
-        return DateTime::createFromFormat($formatToUse, $date);
+        $formatToUse = $format === null ? self::UserDateTimeFormatNoSeconds(): $format;
+        $dateTime = DateTime::createFromFormat($formatToUse, $date);
+        return $dateTime === false ? null : $dateTime;
     }
 
     // returns a nullable string date as a format compatible with the timestamp function
-    // returns null if null given
+    // returns null if null given or invalid date
     public static function DateStringToDbFormat(?string $date) : ?string
     {
-        if($date == null) return null;
+        if($date === null || trim($date) === '') return null;
 
         $dateTime = DateTime::createFromFormat(self::UserDateTimeFormatNoSeconds(), $date);
+        if($dateTime === false) {
+            return null;
+        }
         return $dateTime->format('YmdHis');
     }
 }

@@ -6,6 +6,41 @@ use DateTime;
 
 class MonitoringData
 {
+    // Escapes a string value for safe SQL inclusion, or returns 'null' if null
+    private static function escapeString($conn, $value): string
+    {
+        if ($value === null) {
+            return 'null';
+        }
+        return "'" . mysqli_real_escape_string($conn, (string)$value) . "'";
+    }
+
+    // Validates and returns an integer value, or 'null' if null/invalid
+    private static function escapeInt($value): string
+    {
+        if ($value === null) {
+            return 'null';
+        }
+        return (string)(int)$value;
+    }
+
+    // Validates direction parameter (only allows 'asc' or 'desc')
+    private static function validateDirection($value): string
+    {
+        $value = strtolower((string)$value);
+        return in_array($value, ['asc', 'desc']) ? $value : 'desc';
+    }
+
+    // Validates query status parameter
+    private static function validateQueryStatus($value): ?string
+    {
+        if ($value === null || $value === 'ANY') {
+            return null;
+        }
+        $allowed = ['OPEN', 'CLOSED', 'NONE', 'NOT-OPEN', 'NOT-CLOSED', 'NOT-NONE'];
+        return in_array(strtoupper((string)$value), $allowed) ? strtoupper((string)$value) : null;
+    }
+
     // calls the GetMonitorQueries stored procedure with the given parameters and returns the relevant data
     public static function GetQueries(
         $skipCount, $pageSize, $retDirection, $recordId, $minDate, $maxDate,
@@ -19,32 +54,43 @@ class MonitoringData
         global $module;
         global $conn;
 
-        $projId = $module->getProjectId();
+        $projId = (int)$module->getProjectId();
         $queryFieldSuffix = $module->getProjectSetting("monitoring-field-suffix");
-        $requiresVerificationIndex = $module->getProjectSetting("monitoring-requires-verification-key");
+        $requiresVerificationIndex = (int)$module->getProjectSetting("monitoring-requires-verification-key");
 
-        $retDirection = $retDirection == null ? "desc" : $retDirection;
-        $recordId = $recordId == null ? "null" : "'$recordId'";
-        $minDate = $minDate == null ? "null" : $minDate;
-        $maxDate = $maxDate == null ? "null" : $maxDate;
-        $currentQueryStatus = $currentQueryStatus == null || $currentQueryStatus == "ANY" ? "null" : "'$currentQueryStatus'";
-        $currentMonStatus = $currentMonStatus == null || $currentMonStatus == "any" ? "null" : "$currentMonStatus";
-        $eventId = $eventId == null ? "null" : $eventId;
-        $instance = $instance == null ? "null" : $instance;
-        $dataForm = $dataForm == null ? "null" : "'$dataForm'";
-        $dataField = $dataField == null ? "null" : "'$dataField'";
-        $dataFlag = $dataFlag == null ? "null" : "'$dataFlag'";
-        $dataResponse = $dataResponse == null ? "null" : "'$dataResponse'";
-        $dataResponse = $dataResponse == "'no-response'" ? "'no response'" : $dataResponse;
-        $queryText = $queryText == null ? "null" : "'$queryText'";
-        $incNoTimestamp = $incNoTimestamp === "checked" ? 1 : 0;
-        $usrname = $usrname == null ? "null" : "'$usrname'";
-        $dagUser = $dagUser == null ? "null" : "'$dagUser'";
+        // Sanitize and validate all inputs
+        $safeRetDirection = self::validateDirection($retDirection);
+        $safeSkipCount = self::escapeInt($skipCount);
+        $safePageSize = self::escapeInt($pageSize);
+        $safeRecordId = ($recordId === null || $recordId === '') ? 'null' : self::escapeString($conn, $recordId);
+        $safeMinDate = $minDate === null ? 'null' : self::escapeInt($minDate);
+        $safeMaxDate = $maxDate === null ? 'null' : self::escapeInt($maxDate);
 
-        $query = "call GetMonitorQueries('$queryFieldSuffix', $skipCount, $pageSize, $projId, '$retDirection', $recordId, 
-                $minDate, $maxDate, $currentQueryStatus, $eventId, $instance, $dataForm, $dataField, $dataFlag,
-                $dataResponse, $queryText, $currentMonStatus, '$noQueryText', $requiresVerificationIndex, $incNoTimestamp,
-                $usrname, $dagUser);";
+        $validatedQueryStatus = self::validateQueryStatus($currentQueryStatus);
+        $safeCurrentQueryStatus = $validatedQueryStatus === null ? 'null' : self::escapeString($conn, $validatedQueryStatus);
+
+        $safeCurrentMonStatus = ($currentMonStatus === null || $currentMonStatus === 'any') ? 'null' : self::escapeInt($currentMonStatus);
+        $safeEventId = self::escapeInt($eventId);
+        $safeInstance = self::escapeInt($instance);
+        $safeDataForm = $dataForm === null ? 'null' : self::escapeString($conn, $dataForm);
+        $safeDataField = $dataField === null ? 'null' : self::escapeString($conn, $dataField);
+        $safeDataFlag = $dataFlag === null ? 'null' : self::escapeString($conn, $dataFlag);
+
+        // Handle special case for response
+        $responseValue = $dataResponse === 'no-response' ? 'no response' : $dataResponse;
+        $safeDataResponse = $responseValue === null ? 'null' : self::escapeString($conn, $responseValue);
+
+        $safeQueryText = $queryText === null ? 'null' : self::escapeString($conn, $queryText);
+        $safeIncNoTimestamp = $incNoTimestamp === 'checked' ? 1 : 0;
+        $safeUsrname = $usrname === null ? 'null' : self::escapeString($conn, $usrname);
+        $safeDagUser = $dagUser === null ? 'null' : self::escapeString($conn, $dagUser);
+        $safeQueryFieldSuffix = mysqli_real_escape_string($conn, (string)$queryFieldSuffix);
+        $safeNoQueryText = mysqli_real_escape_string($conn, (string)$noQueryText);
+        $query = "call GetMonitorQueries('$safeQueryFieldSuffix', $safeSkipCount, $safePageSize, $projId, '$safeRetDirection', $safeRecordId,
+                $safeMinDate, $safeMaxDate, $safeCurrentQueryStatus, $safeEventId, $safeInstance, $safeDataForm, $safeDataField, $safeDataFlag,
+                $safeDataResponse, $safeQueryText, $safeCurrentMonStatus, '$safeNoQueryText', $requiresVerificationIndex, $safeIncNoTimestamp,
+                $safeUsrname, $safeDagUser);";
+        // echo "QUERY: " . $query . "<br>";
 
         $currentIndex = 0;
 

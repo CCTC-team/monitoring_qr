@@ -1,8 +1,13 @@
 /*
     A procedure that provides paged data for viewing the monitoring queries for a project
+
+    Performance optimizations:
+    - Temporary tables have indexes on frequently filtered/joined columns
+    - Indexes speed up WHERE clause filtering and JOIN operations
+    - Composite index on (record, event_id, field_name, instance) for efficient lookups
 */
 
-create procedure GetMonitorQueries
+CREATE OR REPLACE PROCEDURE GetMonitorQueries
     (
         in monQueryFieldNameSuffix varchar(100) collate utf8mb4_unicode_ci,
         in skipCount int,
@@ -81,7 +86,18 @@ create temporary table rh_mon_queries
     comment text DEFAULT NULL,
     current_query_status varchar(100) DEFAULT NULL,
     username varchar(100) DEFAULT NULL,
-    form_name varchar(100) DEFAULT NULL
+    form_name varchar(100) DEFAULT NULL,
+    -- Add indexes for frequently filtered/joined columns
+    INDEX idx_record (record),
+    INDEX idx_event_id (event_id),
+    INDEX idx_instance (instance),
+    INDEX idx_form_name (form_name),
+    INDEX idx_current_query_status (current_query_status),
+    INDEX idx_username (username),
+    INDEX idx_ts (ts),
+    INDEX idx_field_name (field_name),
+    -- Composite index for common JOIN pattern
+    INDEX idx_lookup (record, event_id, field_name, instance)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 set sqlQuery = concat(
@@ -92,13 +108,14 @@ set sqlQuery = concat(
         select
             b.ts,
             a.record,
+            a.project_id,
             a.event_id,
             a.field_name,
-            a.instance,
+            IF(a.instance is null, 1, a.instance) as instance,
             b.comment,
             b.current_query_status,
             d.username,
-            ROW_NUMBER() OVER (PARTITION BY a.record, a.event_id, a.field_name, a.instance ORDER BY b.ts DESC) as rn
+            ROW_NUMBER() OVER (PARTITION BY a.record, a.event_id, a.field_name, IF(a.instance is null, 1, a.instance) ORDER BY b.ts DESC) as rn
         from
             redcap_data_quality_status a
             inner join redcap_data_quality_resolutions b
@@ -145,12 +162,13 @@ set sqlQuery = concat(
                 where
                     a.project_id = ?
                     and a.field_name like concat(''%'', ?)
-                    and ? is null or ? = c.username     -- daguser is null or must filter for it when given
+                    and (? is null or ? = c.username)   -- daguser is null or must filter for it when given
     ),
     joined as (
         select distinct
             ts,
             record,
+            a.project_id,
             a.event_id,
             c.descrip as event_name,
             a.field_name,
@@ -162,7 +180,8 @@ set sqlQuery = concat(
         from
             rankedEntry a
             inner join redcap_metadata b
-            on a.field_name = b.field_name
+            on a.project_id = b.project_id
+            and a.field_name = b.field_name
             inner join redcap_events_metadata c
             on a.event_id = c.event_id
         where
@@ -251,7 +270,9 @@ set sqlQuery = concat(
         current_query_status varchar(100) DEFAULT NULL,
         username varchar(100) DEFAULT NULL,
         form_name varchar(100) DEFAULT NULL,
-        mon_stat_value varchar(100) DEFAULT NULL
+        mon_stat_value varchar(100) DEFAULT NULL,
+        -- Add indexes for pagination and ordering
+        INDEX idx_urn (urn)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     -- return the main record set applying the paging here
