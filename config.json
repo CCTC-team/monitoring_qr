@@ -3,6 +3,7 @@
   "description": "Module that supports a basic monitoring implementation for the purpose of SDV. This module is complimented by the Embellish fields module to display the endpoints in the form",
   "namespace": "CCTC\\MonitoringQRModule",
   "framework-version": 14,
+  "documentation": "https://github.com/CCTC-team/monitoring_qr",
   "authors": [
     {
       "name": "Richard Hardy",
@@ -28,8 +29,6 @@
   },
   "auth-ajax-actions": [
     "setMonitorStatus"
-  ],
-  "system-settings": [
   ],
   "project-settings": [
     {
