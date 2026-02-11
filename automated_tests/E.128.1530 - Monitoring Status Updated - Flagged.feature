@@ -136,6 +136,7 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     When I clear field and enter "TextEdited" into the input field labeled "Text2"
     And I select the submit option labeled "Save & Stay" on the Data Collection Instrument
     And I should see the monitoring status "Verified"
+    And I wait for 1 second
     # Field is flagged
     When I clear field and enter "Name1" into the input field labeled "Name"
     And I select the submit option labeled "Save & Stay" on the Data Collection Instrument

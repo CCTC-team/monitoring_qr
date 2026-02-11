@@ -198,6 +198,7 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     Then I should see "(Instance #3)"
     And I should see "Monitor query status: CLOSED"
     And I should see the monitoring status "Verified"
+    And I wait for 1 second
 
     # VERIFY - E.128.1500
     # Field is flagged
