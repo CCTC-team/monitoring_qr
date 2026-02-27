@@ -158,7 +158,7 @@ $totPages = ceil($totalCount / $pageSize);
 $actPage = (int)$pageNum + 1;
 
 //create the reset to return to default original state
-$resetUrl = Utility::getBaseUrl() . "/ExternalModules/?prefix=$moduleName&page=$page&pid=$projId";
+$resetUrl = APP_PATH_WEBROOT . "ExternalModules/?prefix=$moduleName&page=$page&pid=$projId";
 $doReset = "window.location.href='$resetUrl';";
 
 $skipFrom = $showingCount == 0 ? 0 : $skipCount + 1;

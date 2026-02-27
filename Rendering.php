@@ -9,8 +9,7 @@ class Rendering
     //create the base row
     static function createRow($numRows, $ts, $username, $summaryStatus, $monStatus, $arr, $projId): string
     {
-        $baseUrl = Utility::getBaseUrl();
-        $goLink = Utility::MakeFormLink($baseUrl, $projId, $arr['record'], $arr['event_id'], $arr['form_name'], $arr['instance']);
+        $goLink = Utility::MakeFormLink($projId, $arr['record'], $arr['event_id'], $arr['form_name'], $arr['instance']);
 
         return
             "<tr>

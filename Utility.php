@@ -9,30 +9,16 @@ require_once APP_PATH_DOCROOT . "/Classes/DateTimeRC.php";
 
 class Utility
 {
-    public static function getBaseUrl() : string
-    {
-        global $module;
-        $url = $module->getUrl("somepage.php");
-        //use regex to pull everything prior to the ExternalModules part
-        $basePat = "/https:\/\/.*(?=\/ExternalModules)/";
-        preg_match($basePat, $url, $urlMatches);
-        return $urlMatches[0];
-    }
 
-    public static function getREDCapUrlPart() : string
+    public static function MakeFormLink($projectId, $recordId, $eventId, $formName, $instance): string
     {
-        $fullUrl = self::getBaseUrl();
-        preg_match("/\/redcap_v\d+.\d+.\d+/", $fullUrl, $matches);
-        return $matches[0];
-    }
+        $baseUrl = APP_PATH_WEBROOT;
 
-    public static function MakeFormLink($baseUrl, $projectId, $recordId, $eventId, $formName, $instance): string
-    {
         if($instance !== null)
         {
             $instance = "&instance=" . $instance;
         }
-        return "<a href='{$baseUrl}/DataEntry/index.php?pid={$projectId}&id={$recordId}&event_id={$eventId}&page={$formName}{$instance}'><i class='fas fa-eye'></i></a>";
+        return "<a href='{$baseUrl}DataEntry/index.php?pid={$projectId}&id={$recordId}&event_id={$eventId}&page={$formName}{$instance}'><i class='fas fa-eye'></i></a>";
     }
 
     // groups an array
