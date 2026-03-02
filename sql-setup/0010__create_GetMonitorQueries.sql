@@ -13,11 +13,11 @@ CREATE OR REPLACE PROCEDURE GetMonitorQueries
         in skipCount int,
         in pageSize int,
         in projectId int,
-        in retDirection varchar(4),
-        in recordId varchar(10),
+        in retDirection varchar(4) collate utf8mb4_unicode_ci,
+        in recordId varchar(10) collate utf8mb4_unicode_ci,
         in minDate bigint,
         in maxDate bigint,
-        in currentQueryStatus varchar(10),    -- OPEN or CLOSED or 'not opened' - negate with leading '^'
+        in currentQueryStatus varchar(10) collate utf8mb4_unicode_ci,    -- OPEN or CLOSED or 'not opened' - negate with leading '^'
         in eventId int,
         in instance smallint(4),
         in formName varchar(100) collate utf8mb4_unicode_ci,
@@ -26,7 +26,7 @@ CREATE OR REPLACE PROCEDURE GetMonitorQueries
         in response varchar(100) collate utf8mb4_unicode_ci,
         in queryText varchar(100) collate utf8mb4_unicode_ci,    -- uses 'like'
         in currentMonitorStatus smallint(4),        -- int value for monstat field
-        in notOpenedText varchar(100),              -- e.g. NONE
+        in notOpenedText varchar(100) collate utf8mb4_unicode_ci,    -- e.g. NONE
         in requiresVerificationIndex smallint,       -- int value for monstat field meaning 'requires verification'
         in alwaysIncludeWhenNoTimestamp smallint,    -- when not zero, include items with no timestamp regardless of date filters
         in userName varchar(100) collate utf8mb4_unicode_ci,
@@ -38,9 +38,9 @@ begin
     -- if the user is in a dag, this will not be null. If not null restrict the data for the user
 
 
-declare mess mediumtext;
-declare sqlQuery mediumtext;
-declare dataTable varchar(1000);
+declare mess mediumtext collate utf8mb4_unicode_ci;
+declare sqlQuery mediumtext collate utf8mb4_unicode_ci;
+declare dataTable varchar(1000) collate utf8mb4_unicode_ci;
 
 if monQueryFieldNameSuffix is null or monQueryFieldNameSuffix = '' then
     set mess = concat('The stored proc GetMonitorQueries can''t proceed without a monQueryFieldNameSuffix being provided');
