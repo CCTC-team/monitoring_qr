@@ -8,6 +8,8 @@ level. The code is removed when the module is disabled.
 
 #### System set up ####
 
+> **Note:** This module has been tested with **MariaDB versions 10.5 and 10.11**. Please verify that the module works correctly with your specific database version before deploying to a production environment.
+
 Enabling the module at a system level will AUTOMATICALLY do the following via the system hook
 `redcap_module_system_enable`;
 
