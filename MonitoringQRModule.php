@@ -150,46 +150,109 @@ hideCommentsButton();
     //adds the $insertCode into the $filePath after the $searchTerm
     function addCodeToFile($filePath, $searchTerm, $insertCode) : void
     {
-        $file_contents = file($filePath);
-        $found = false;
-
-        $searchArray = explode("\n", $searchTerm);
-        $matched = 0;
-
-        foreach ($file_contents as $index => $line) {
-            //increment $matched so checks next line on next iteration
-            if (str_contains($line, $searchArray[$matched])) {
-                $matched++;
+        try {
+            if (!file_exists($filePath)) {
+                throw new Exception("Target file not found: $filePath");
             }
 
-            //if all the lines were found then mark as found
-            if($matched == count($searchArray) - 1) {
-                array_splice($file_contents, $index + 1, 0, $insertCode);
-                $found = true;
-                break;
+            $file_contents = file($filePath);
+            if ($file_contents === false) {
+                throw new Exception("Failed to read file: $filePath");
             }
-        }
 
-        //write it back if was found
-        if ($found) {
-            file_put_contents($filePath, implode('', $file_contents));
+            // Check if code already exists
+            $fullContents = implode('', $file_contents);
+            if (strpos($fullContents, $insertCode) !== false) {
+                $this->log(basename($filePath) . ' code already exists in file', ['file' => $filePath]);
+                return;
+            }
+
+            $found = false;
+            $searchArray = explode("\n", $searchTerm);
+            $matched = 0;
+
+            foreach ($file_contents as $index => $line) {
+                //increment $matched so checks next line on next iteration
+                if (str_contains($line, $searchArray[$matched])) {
+                    $matched++;
+                }
+
+                //if all the lines were found then mark as found
+                if($matched == count($searchArray) - 1) {
+                    array_splice($file_contents, $index + 1, 0, $insertCode);
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (!$found) {
+                $this->log(basename($filePath) . ' search term not found in file', [
+                    'file' => $filePath,
+                    'search_term' => substr($searchTerm, 0, 100) . '...'
+                ]);
+                return;
+            }
+
+            //write it back if was found
+            $result = file_put_contents($filePath, implode('', $file_contents));
+            if ($result === false) {
+                throw new Exception("Failed to write file: $filePath");
+            }
+
+            $this->log(basename($filePath) . ' code inserted successfully', ['file' => $filePath]);
+
+        } catch (Exception $e) {
+            $this->log('Error modifying ' . basename($filePath), [
+                'file' => $filePath,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
         }
     }
 
     //removes the inserted hook in the Hooks.php file
     function removeCodeFromFile($filePath, $removeCode) : void
     {
-        $file_contents = file_get_contents($filePath);
-        if(str_contains($file_contents, $removeCode)) {
+        try {
+            if (!file_exists($filePath)) {
+                $this->log(basename($filePath) . ' not found for code removal', ['file' => $filePath]);
+                return;
+            }
+
+            $file_contents = file_get_contents($filePath);
+            if ($file_contents === false) {
+                throw new Exception("Failed to read file: $filePath");
+            }
+
+            if (!str_contains($file_contents, $removeCode)) {
+                $this->log(basename($filePath) . ' code not found (may already be removed)', ['file' => $filePath]);
+                return;
+            }
+
             $modified_contents = str_replace($removeCode, "", $file_contents);
-            file_put_contents($filePath, $modified_contents);
+            $result = file_put_contents($filePath, $modified_contents);
+            if ($result === false) {
+                throw new Exception("Failed to write file: $filePath");
+            }
+
+            $this->log(basename($filePath) . ' code removed successfully', ['file' => $filePath]);
+
+        } catch (Exception $e) {
+            $this->log('Error removing code from ' . basename($filePath), [
+                'file' => $filePath,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
         }
     }
 
     function redcap_module_system_enable($version): void
     {
+        $this->log('Module system enable initiated', ['version' => $version]);
+
         //just creates the required sql stored procedure
         self::execFromFile("0010__create_GetMonitorQueries.sql");
+        $this->log('Database objects created successfully');
 
         //adds the code to the files as needed
         self::addCodeToFile(self::HookFilePath, self::HookSearchTerm, self::HookCode);
@@ -200,8 +263,11 @@ hideCommentsButton();
 
     function redcap_module_system_disable($version): void
     {
+        $this->log('Module system disable initiated', ['version' => $version]);
+
         //just drops the sql stored proc required for the module to work
         self::exec("drop procedure if exists GetMonitorQueries;");
+        $this->log('Database objects dropped successfully');
 
         //removes the previously added code
         self::removeCodeFromFile(self::HookFilePath, self::HookCode);
