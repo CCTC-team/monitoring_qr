@@ -15,23 +15,23 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     
     Given I click on the link labeled "Manage"
     Then I should see "External Modules - Module Manager"
-    And I should NOT see "Monitoring QR - v1.0.0"
+    And I should NOT see "Monitoring QR - v1.0.1"
     When I click on the button labeled "Enable a module"
     And I wait for 2 seconds
     Then I should see "Available Modules"
     And I click on the button labeled "Enable" in the row labeled "Monitoring QR"
     And I wait for 1 second
     And I click on the button labeled "Enable"
-    Then I should see "Monitoring QR - v1.0.0"
+    Then I should see "Monitoring QR - v1.0.1"
  
   Scenario: Enable external module in project
     Given I create a new project named "E.128.800" by clicking on "New Project" in the menu bar, selecting "Practice / Just for fun" from the dropdown, choosing file "fixtures/cdisc_files/E128700.xml", and clicking the "Create Project" button
     And I click on the link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
-    And I should NOT see "Monitoring QR - v1.0.0"
+    And I should NOT see "Monitoring QR - v1.0.1"
     When I click on the button labeled "Enable a module"
-    And I click on the button labeled "Enable" in the row labeled "Monitoring QR - v1.0.0"
-    Then I should see "Monitoring QR - v1.0.0"
+    And I click on the button labeled "Enable" in the row labeled "Monitoring QR - v1.0.1"
+    Then I should see "Monitoring QR - v1.0.1"
 
     Given I click on the button labeled "Configure"
     Then I should see "Configure Module"
@@ -49,7 +49,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I scroll to the field labeled "When the user visits the Resolve Issues page, handle monitor status fields by"
     And I select "Hiding the button to interact with the query but leave the row in place" on the dropdown field labeled "When the user visits the Resolve Issues page, handle monitor status fields by"
     Then I click on the button labeled "Save"
-    And I should see "Monitoring QR - v1.0.0"
+    And I should see "Monitoring QR - v1.0.1"
 
     #ACTION: Enable the Data Resolution Workflow
     Given I click on the link labeled "Setup"
@@ -178,7 +178,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I check the checkbox labeled "When checked, the save and cancel buttons are not hidden when the user is not a data entry user"
     And I enter "@NOTMONITORED" into the input field labeled "An action tag that indicates the field should not be monitored"
     Then I click on the button labeled "Save"
-    And I should see "Monitoring QR - v1.0.0"   
+    And I should see "Monitoring QR - v1.0.1"   
     And I logout
 
     # VERIFY -  E.128.1100
@@ -239,7 +239,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     When I click on the link labeled "My Projects"
     And I click on the link labeled "E.128.800"
     And I click on the link labeled "Manage"
-    Then I should see "Monitoring QR - v1.0.0"
+    Then I should see "Monitoring QR - v1.0.1"
     #And I should NOT see the button labeled "Disable"
     When I click on the button labeled "Configure"
     Then I should see "Configure Module"
@@ -261,7 +261,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I should NOT see "When checked, the default behaviour of making all fields readonly (except the monitor status and form status fields) is not applied"
     And I should NOT see "When checked, the first column in the inline table below the data entry form includes the field label after the field name"
     And I click on the button labeled "Cancel"
-    Then I should see "Monitoring QR - v1.0.0"
+    Then I should see "Monitoring QR - v1.0.1"
     And I logout
 
   Scenario: E.128.100 - Disable external module
@@ -271,24 +271,24 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I click on the link labeled "E.128.800"
     Given I click on the link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
-    And I should see "Monitoring QR - v1.0.0"
+    And I should see "Monitoring QR - v1.0.1"
     When I click on the button labeled "Disable"
     Then I should see "Disable module?"
     When I click on the button labeled "Disable module"
-    Then I should NOT see "Monitoring QR - v1.0.0"
+    Then I should NOT see "Monitoring QR - v1.0.1"
 
     Given I click on the link labeled "Logging"
     Then I should see a table header and row containing the following values in the logging table:
       | Time / Date      | Username   | Action                                                                      | List of Data Changes OR Fields Exported                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.0.0" for project                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.0.0" for project | ignore-for-monitoring-action-tag, do-not-hide-save-and-cancel-buttons-for-non-data-entry, do-not-make-fields-readonly, include-field-label-in-inline-form, allow-data-managers-to-respond-to-queries                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.0.0" for project | reserved-hide-from-non-admins-in-project-list, monitoring-field-suffix, monitoring-flags-regex, monitoring-role, data-entry-roles, data-manager-role, monitoring-not-required-key, monitoring-requires-verification-key, monitoring-requires-verification-due-to-data-change-key, monitoring-field-verified-key, monitoring-verification-in-progress-key, trigger-requires-verification-for-change, monitoring-role-show-inline, data-entry-role-show-inline, data-manager-role-show-inline, monitors-only-query-flagged-fields, resolve-issues-behaviour, do-not-hide-save-and-cancel-buttons-for-non-data-entry, do-not-make-fields-readonly, include-field-label-in-inline-form |
-      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.0.0" for project                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.0.1" for project                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.0.1" for project | ignore-for-monitoring-action-tag, do-not-hide-save-and-cancel-buttons-for-non-data-entry, do-not-make-fields-readonly, include-field-label-in-inline-form, allow-data-managers-to-respond-to-queries                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.0.1" for project | reserved-hide-from-non-admins-in-project-list, monitoring-field-suffix, monitoring-flags-regex, monitoring-role, data-entry-roles, data-manager-role, monitoring-not-required-key, monitoring-requires-verification-key, monitoring-requires-verification-due-to-data-change-key, monitoring-field-verified-key, monitoring-verification-in-progress-key, trigger-requires-verification-for-change, monitoring-role-show-inline, data-entry-role-show-inline, data-manager-role-show-inline, monitors-only-query-flagged-fields, resolve-issues-behaviour, do-not-hide-save-and-cancel-buttons-for-non-data-entry, do-not-make-fields-readonly, include-field-label-in-inline-form |
+      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.0.1" for project                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
     # Disable external module in Control Center
     Given I click on the link labeled "Control Center"
     When I click on the link labeled "Manage"
-    Then I should see "Monitoring QR - v1.0.0"
+    Then I should see "Monitoring QR - v1.0.1"
     When I click on the button labeled "View Usage"
     Then I should see "None"
     And I should NOT see "E.128.800"
@@ -296,16 +296,16 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I click on the button labeled "Disable"
     Then I should see "Disable module?"
     When I click on the button labeled "Disable module"
-    Then I should NOT see "Monitoring QR - v1.0.0"
+    Then I should NOT see "Monitoring QR - v1.0.1"
 
     Given I click on the link labeled "User Activity Log"
     Then I should see a table header and row containing the following values in a table:
       | Time             | User       | Event                                                                       |
-      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.0.0" for system                   |
-      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.0.0" for project                  |
-      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.0.0" for project |
-      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.0.0" for project                   |
-      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.0.0" for system                    |
+      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.0.1" for system                   |
+      | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.0.1" for project                  |
+      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.0.1" for project |
+      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.0.1" for project                   |
+      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.0.1" for system                    |
 
     And I logout
 

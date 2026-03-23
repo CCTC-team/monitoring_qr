@@ -34,7 +34,7 @@ This module enables monitors to:
 ### File Structure
 
 ```
-monitoring_qr_v1.0.0/
+monitoring_qr_v1.0.1/
 ├── config.json              # Module configuration and settings schema (includes auth-ajax-actions)
 ├── MonitoringQRModule.php   # Main module class extending AbstractExternalModule
 ├── Utility.php              # Date/time utilities and helper functions
