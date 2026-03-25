@@ -41,6 +41,7 @@ Feature: E.128.100 - The system shall support the ability to enable/disable Moni
     Then I should see "Disable module?"
     When I click on the button labeled "Disable module"
     Then I should NOT see "Monitoring QR - v1.0.1"
+
     When I click on the link labeled "View Logs"
     Then I should see "External Module Logs"
     And I should see a table header and row containing the following values in a table:
@@ -53,7 +54,6 @@ Feature: E.128.100 - The system shall support the ability to enable/disable Moni
       | monitoring_qr | DataEntry.php code inserted successfully  | Test_Admin |
       | monitoring_qr | Hooks.php code inserted successfully      | Test_Admin |
       | monitoring_qr | Module system enable initiated            | Test_Admin |
-
 
     And I logout
 
