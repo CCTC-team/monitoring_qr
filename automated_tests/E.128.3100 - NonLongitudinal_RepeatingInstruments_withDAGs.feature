@@ -1,4 +1,4 @@
-Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
+Feature: E.128.3100 - NonLongitudinal_RepeatingInstruments_withDAGS
 
   As a REDCap end user
   I want to see that Monitoring QR is functioning as expected
@@ -23,9 +23,9 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
     And I wait for 1 second
     And I click on the button labeled "Enable"
     Then I should see "Monitoring QR - v1.0.1"
- 
+
   Scenario: Enable external module in project
-    Given I create a new project named "E.128.3200" by clicking on "New Project" in the menu bar, selecting "Practice / Just for fun" from the dropdown, choosing file "fixtures/cdisc_files/ProjectTypes/NonLongitudinal_RepeatingInstruments_noDAGS.xml", and clicking the "Create Project" button
+    Given I create a new project named "E.128.3100" by clicking on "New Project" in the menu bar, selecting "Practice / Just for fun" from the dropdown, choosing file "fixtures/cdisc_files/ProjectTypes/NonLongitudinal_RepeatingInstruments_withDAGs.xml", and clicking the "Create Project" button
     And I click on the link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
     And I should NOT see "Monitoring QR - v1.0.1"
@@ -41,10 +41,11 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
     Then I should see "The Data Resolution Workflow has now been enabled!"
     And I click on the button labeled "Close"
 
-    # Adding Test_User2 to DataEntryPI role
+    # Adding Test_User2 to DataEntryPI role and DAG2
     Given I click on the link labeled "User Rights"
     When I enter "Test_User2" into the field with the placeholder text of "Assign new user to role"
     And I click on the button labeled "Assign to role"
+    And I select "DAG2" on the dropdown field labeled "Assign To DAG" on the role selector dropdown
     And I select "DataEntryPI" on the dropdown field labeled "Select Role" on the role selector dropdown
     When I click on the button labeled "Assign"
     Then I should see "Test User2" within the "DataEntryPI" row of the column labeled "Username" of the User Rights table
@@ -58,7 +59,7 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
 
     # ACTION: Import data
     Given I click on the link labeled "Data Import Tool"
-    And I upload a "csv" format file located at "fixtures/import_files/NonLongitudinal_RepeatingInstruments_noDAGS.csv", by clicking the button near "Select your CSV data file" to browse for the file, and clicking the button labeled "Upload File" to upload the file
+    And I upload a "csv" format file located at "fixtures/import_files/NonLongitudinal_RepeatingInstruments_withDAGs.csv", by clicking the button near "Select your CSV data file" to browse for the file, and clicking the button labeled "Upload File" to upload the file
     And I should see "Your document was uploaded successfully and is ready for review."
     And I click on the button labeled "Import Data"
     Then I should see "Import Successful!"
@@ -84,13 +85,13 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
     And I should see "Monitoring QR - v1.0.1"
     And I logout
 
-    # E.128.1700, E.128.1800
+    # E.128.1700, E.128.180
     Given I login to REDCap with the user "Test_User4"
     When I click on the link labeled "My Projects"
-    And I click on the link labeled "E.128.3200"
+    And I click on the link labeled "E.128.3100"
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
-    And I click on the link labeled "2"
+    And I click on the link labeled "2-1"
     And I click on the icon in the column labeled "" and the row labeled "2"
     Then I should see "Monitor query status: NONE"
     And I should see a table header and rows containing the following values in a table:
@@ -119,11 +120,11 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
 
     Given I login to REDCap with the user "Test_User2"
     When I click on the link labeled "My Projects"
-    And I click on the link labeled "E.128.3200"
+    And I click on the link labeled "E.128.3100"
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
-    And I should see a link labeled "1"
-    And I click on the link labeled "2"
+    And I should NOT see a link labeled "1-1"
+    And I click on the link labeled "2-1"
     And I click on the icon in the column labeled "" and the row labeled "2"
     Then I should see a table header and rows containing the following values in a table:
       | Field             | Field value | Query  |
@@ -134,7 +135,7 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
     And I should see the monitoring status "Verification in progress"
     And I should see "Monitor query status: OPEN"
     And I should see "Showing queried fields only. Waiting for responses."
-    And I select "Value correct as per source" in the dropdown field in column "Response" for the field "ptname"
+    And I select "Value updated as per source" in the dropdown field in column "Response" for the field "ptname"
     And I select "Value correct, error in source updated" in the dropdown field in column "Response" for the field "notesbox"
     And I enter "Response1" in the column "Response" for the field "notesbox"
     And I select "Missing data not done" in the dropdown field in column "Response" for the field "checkbox"
@@ -147,16 +148,16 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
 
     Given I login to REDCap with the user "Test_User4"
     When I click on the link labeled "My Projects"
-    And I click on the link labeled "E.128.3200"
+    And I click on the link labeled "E.128.3100"
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
-    And I click on the link labeled "2"
+    And I click on the link labeled "2-1"
     And I click on the icon in the column labeled "" and the row labeled "2"
     Then I should see the monitoring status "Verification in progress"
     And I should see "Monitor query status: OPEN"
     And I should see a table header and rows containing the following values in a table:
       | Field             | Field value | Query response [comment]                           |
-      | ptname            |             | Value correct as per source                        |
+      | ptname            |             | Value updated as per source                        |
       | notesbox          |             | Value correct, error in source updated [Response1] |
       | checkbox          | [ 0, 0, 0 ] | Missing data not done [Response2]                  |
 
@@ -176,9 +177,9 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
 
     Given I login to REDCap with the user "Test_User2"
     When I click on the link labeled "My Projects"
-    And I click on the link labeled "E.128.3200" 
+    And I click on the link labeled "E.128.3100" 
     When I click on the link labeled "Record Status Dashboard"
-    And I click on the link labeled "2"
+    And I click on the link labeled "2-1"
     And I click on the icon in the column labeled "" and the row labeled "2"
     Then I should see "Monitor query status: CLOSED"
     And I should see the monitoring status "Verified"
@@ -186,7 +187,7 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
 
     # VERIFY - E.128.1500
     # Field not flagged or queried previously
-    When I check the checkbox labeled "Checkbox2"
+    When I check the checkbox labeled "Checkbox"
     And I select the submit option labeled "Save & Stay" on the Data Collection Instrument
     Then I should see the monitoring status "Requires verification due to data change"
     And I should see "Monitor query status: CLOSED"
@@ -197,7 +198,7 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
     # Disable external module in project
     Given I login to REDCap with the user "Test_Admin"
     When I click on the link labeled "My Projects"
-    And I click on the link labeled "E.128.3200"
+    And I click on the link labeled "E.128.3100"
     Given I click on the link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
     And I should see "Monitoring QR - v1.0.1"
@@ -219,7 +220,7 @@ Feature: E.128.3200 - NonLongitudinal_RepeatingInstruments_noDAGS
     Then I should see "Monitoring QR - v1.0.1"
     When I click on the button labeled "View Usage"
     Then I should see "None"
-    And I should NOT see "E.128.3200"
+    And I should NOT see "E.128.3100"
     And I close the dialog box for the external module "Monitoring QR"
     And I click on the button labeled "Disable"
     Then I should see "Disable module?"
