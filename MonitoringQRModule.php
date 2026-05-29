@@ -1626,6 +1626,11 @@ makeFieldsReadonly($fields, $safeMonitorField);
     function redcap_save_record_mon_qr($changedFields, $project_id, $record, $instrument, $event_id,
                                  $group_id, $survey_hash, $response_id, $repeat_instance): void
     {
+        //this is a custom hook injected into DataEntry.php; unlike standard hooks it fires for every project
+        //where the module is system-enabled, so explicitly bail unless enabled in this specific project
+        if (!$this->isModuleEnabled($this->PREFIX, $project_id)) {
+            return;
+        }
 
         try {
             $this->processSaveRecordMonQr($changedFields, $project_id, $record, $instrument, $event_id,
