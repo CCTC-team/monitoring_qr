@@ -35,7 +35,7 @@ class RoleManager
     // Checks if current user has a data entry role (supports multiple roles)
     public function userHasDataEntryRole(): bool
     {
-        $deRoles = $this->module->getProjectSetting('data-entry-roles');
+        $deRoles = $this->module->getProjectSetting('data-entry-roles') ?? [];
         $user = $this->module->getUser();
         $rights = $user->getRights();
 

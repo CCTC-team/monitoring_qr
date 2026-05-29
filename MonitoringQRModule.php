@@ -406,41 +406,38 @@ hideCommentsButton();
             );
         $data = REDCap::getData($params);
 
+        // To check data structure and content during development, you can uncomment the following line to log the retrieved data to the console.
+        // Be cautious with this in production due to potential sensitive information and performance implications.
+        // echo '<script>console.log("MonitoringQR $data:", '
+        //    . json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE)
+        //    . ');</script>';
+
         //NOTE: if there is an issue with the Status not being updated when the buttons are clicked, it is likely
         //that the issue is here and the forms _monstat value is not being picked up from the return array
         //from the built in REDCap::getData() function
 
-        $isRepeatingForm = !empty($data[$record]['repeat_instances']);
+        $isRepeatingForm  = $Proj->isRepeatingForm($event_id, $instrument);
+        $isRepeatingEvent = $Proj->isRepeatingEvent($event_id);
 
-        if(!$isRepeatingForm) {
-            $thisFormData = $data[$record][$event_id];
-        } else {
-            //the structure of the array depends on project settings and existing instances of the form
-            if(!empty($data[$record]['repeat_instances'][$event_id])){
-                if(!empty($data[$record]['repeat_instances'][$event_id][$instrument])){
-                    if(!empty($data[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance])) {
-                        $thisFormData = $data[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance];
-                    } else {
-                        //set the default new value that is given when new forms shown i.e. 0 for Incomplete
-                        $thisFormData["{$instrument}_complete"] = 0;
-                    }
-                } else {
-                    //the form name is not always given when only one form
-
-
-                    //if a new form, the max repeat instance will be less than the given repeat_instance so
-                    //return null to signify to caller that form data not found
-                    $instances = array_keys($data[$record]['repeat_instances'][$event_id]['']);
-                    $max = max($instances);
-                    if($max < $repeat_instance) {
-                        return null;
-                    }
-
-                    $thisFormData = $data[$record]['repeat_instances'][$event_id][''][$repeat_instance];
-                }
+        if (!$isRepeatingForm && !$isRepeatingEvent) {
+            $thisFormData = $data[$record][$event_id] ?? [];
+        } else if ($isRepeatingForm) {
+            // repeating form: instances keyed under [instrument]
+            $instances = $data[$record]['repeat_instances'][$event_id][$instrument] ?? [];
+            if (!empty($instances[$repeat_instance])) {
+                $thisFormData = $instances[$repeat_instance];
             } else {
-                $thisFormData = $data[$record][''][$event_id][$instrument][$repeat_instance];
+                // form not saved at this instance yet — default to Incomplete
+                $thisFormData["{$instrument}_complete"] = 0;
             }
+        } else {
+            // repeating event: instances keyed under '' (empty string)
+            $instances = $data[$record]['repeat_instances'][$event_id][''] ?? [];
+            if (empty($instances) || max(array_keys($instances)) < $repeat_instance) {
+                // requested instance not yet created — caller treats null as "not found"
+                return null;
+            }
+            $thisFormData = $instances[$repeat_instance];
         }
 
         //if still empty then the form hasn't been created yet so get field names
@@ -1629,6 +1626,7 @@ makeFieldsReadonly($fields, $safeMonitorField);
     function redcap_save_record_mon_qr($changedFields, $project_id, $record, $instrument, $event_id,
                                  $group_id, $survey_hash, $response_id, $repeat_instance): void
     {
+
         try {
             $this->processSaveRecordMonQr($changedFields, $project_id, $record, $instrument, $event_id,
                 $group_id, $survey_hash, $response_id, $repeat_instance);
