@@ -5,40 +5,35 @@
 The Monitoring QR module leverages the Data Resolution Workflow to support a monitoring workflow that can be kept
 independent of the main data resolution workflow.
 
-This module inserts code into the `Hooks.php` and `DataEntry.php` REDCap files when the module is enabled at a system
-level. The code is removed when the module is disabled.
+This module reacts to record saves via the native REDCap core hook `redcap_save_record_changes`, which fires
+immediately after a record is saved and provides the **old and new value of every changed field**. It also inserts a
+small UI tweak into `DataQuality.js` when enabled at a system level, and removes it when disabled.
+
+> **Note:** Earlier versions of this module self-patched `Hooks.php` and `DataEntry.php` on enable to inject a
+> custom `redcap_save_record_mon_qr` hook. That is **no longer done** — the module now consumes the first-class
+> core hook `redcap_save_record_changes` instead. This requires a REDCap core version that provides that hook.
 
 #### System set up ####
 
 > **Note:** This module has been tested with **MariaDB versions 10.5 and 10.11**. Please verify that the module works correctly with your specific database version before deploying to a production environment.
+
+**Record-save handling:** the module reacts to record saves through the native core hook `redcap_save_record_changes`
+(implemented in REDCap core's `Classes/Hooks.php` and `Classes/DataEntry.php`). Core passes a per-field
+`{old_value, new_value}` change set to the module's `redcap_save_record_changes()` method, which uses it to decide
+whether a "Verification complete" monitoring status must revert to "Requires verification due to data change".
+The module does **not** patch `Hooks.php`/`DataEntry.php` itself.
 
 Enabling the module at a system level will AUTOMATICALLY do the following via the system hook
 `redcap_module_system_enable`;
 
 1. Create the `GetMonitorQueries` stored procedure in the REDCap database. This procedure is required to provide the log 
 of monitor queries
-1. Insert code in the `Hooks.php` file - the following is inserted after the first `call` function
-    ```php
-    //****** inserted by Monitoring QR module ******
-    public static function redcap_save_record_mon_qr($result){}
-    //****** end of insert ******
-    ```
-    This makes the new hook `redcap_save_record_mon_qr`available to the module
-
-1. Insert code in the `DataEntry.php` file - the following is inserted after the existing 
-   `Hooks::call('redcap_save_record'...` call around line 5909
-    ```php
-    //****** inserted by Monitoring QR module ******
-    Hooks::call('redcap_save_record_mon_qr', array($field_values_changed, PROJECT_ID, $fetched, $_GET['page'], $_GET['event_id'], $group_id, ($isSurveyPage ? $_GET['s'] : null), $response_id, $_GET['instance']));
-    //****** end of insert ******
-    ```
-    This executes the call to the hook `redcap_save_record_mon_qr` that is handled in the module 
+1. Insert a small UI tweak into the `DataQuality.js` file (hides the comments button in the Data Resolution view)
 
 Disabling the module at a system level will AUTOMATICALLY do the following via the system hook
 `redcap_module_system_disable`.
 1. Drop the `GetMonitorQueries` stored procedure in the REDCap database automatically
-1. Remove the code inserted into `Hooks.php`
-1. Remove the code inserted into `DataEntry.php`
+1. Remove the UI tweak inserted into `DataQuality.js`
 
 When a new version of the module becomes available, the module should be disabled and then re-enabled from the Control Center at the system level. Failure to do so may cause the module to malfunction.
 

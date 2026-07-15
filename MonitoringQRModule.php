@@ -114,24 +114,11 @@ class MonitoringQRModule extends AbstractExternalModule
         db_query($sql);
     }
 
-    const HookFilePath = APP_PATH_DOCROOT . "/Classes/Hooks.php";
-    const HookCode =
-'//****** inserted by Monitoring QR module ******
-public static function redcap_save_record_mon_qr($result){}
-//****** end of insert ******' . PHP_EOL;
-    const HookSearchTerm = '		// Call the appropriate method to process the return values, then return anything returned by the custom function
-		return call_user_func_array(__CLASS__ . \'::\' . $function_name, array($result));
-	}
-';
-
-    const DataEntryFilePath = APP_PATH_DOCROOT . "/Classes/DataEntry.php";
-    const DataEntryCode =
-'//****** inserted by Monitoring QR module ******
-Hooks::call(\'redcap_save_record_mon_qr\', array($field_values_changed, PROJECT_ID, $fetched, $_GET[\'page\'], $_GET[\'event_id\'], $group_id, ($isSurveyPage ? $_GET[\'s\'] : null), $response_id, $_GET[\'instance\']));
-//****** end of insert ******' . PHP_EOL;
-    const DataEntrySearchTerm = '            if (!is_numeric($group_id)) $group_id = null;
-            Hooks::call(\'redcap_save_record\', array(PROJECT_ID, $fetched, $_GET[\'page\'], $_GET[\'event_id\'], $group_id, ($isSurveyPage ? $_GET[\'s\'] : null), $response_id, $_GET[\'instance\']));
-        }';
+    // NOTE: The Hooks.php / DataEntry.php self-patch constants (HookCode/HookSearchTerm/
+    // DataEntryCode/DataEntrySearchTerm) were removed. The record-save hook is now provided
+    // natively by REDCap core as redcap_save_record_changes(), which passes a per-field
+    // {old_value, new_value} change set. The module consumes it via the method of the same name
+    // below. Only the DataQuality.js UI tweak is still applied on enable/disable.
 
     const DataQualityFilePath = APP_PATH_DOCROOT . "/Resources/js/DataQuality.js";
     const DataQualityCode =
@@ -255,8 +242,9 @@ hideCommentsButton();
         $this->log('Database objects created successfully');
 
         //adds the code to the files as needed
-        self::addCodeToFile(self::HookFilePath, self::HookSearchTerm, self::HookCode);
-        self::addCodeToFile(self::DataEntryFilePath, self::DataEntrySearchTerm, self::DataEntryCode);
+        //NOTE: the record-save hook is now provided natively by REDCap core as
+        //redcap_save_record_changes (see Classes/Hooks.php + Classes/DataEntry.php), so the module
+        //no longer self-patches Hooks.php/DataEntry.php. Only the DataQuality.js UI tweak remains.
         self::addCodeToFile(self::DataQualityFilePath, self::DataQualitySearchTerm, self::DataQualityCode);
     }
 
@@ -270,8 +258,8 @@ hideCommentsButton();
         $this->log('Database objects dropped successfully');
 
         //removes the previously added code
-        self::removeCodeFromFile(self::HookFilePath, self::HookCode);
-        self::removeCodeFromFile(self::DataEntryFilePath, self::DataEntryCode);
+        //NOTE: Hooks.php/DataEntry.php are no longer patched (the redcap_save_record_changes hook is
+        //now native to REDCap core); only the DataQuality.js UI tweak needs to be reverted here.
         self::removeCodeFromFile(self::DataQualityFilePath, self::DataQualityCode);
     }
 
@@ -1621,23 +1609,28 @@ makeFieldsReadonly($fields, $safeMonitorField);
     }
 
     /**
-     * Hook: Handles monitoring status updates when records are saved
+     * Hook: Handles monitoring status updates when records are saved.
+     *
+     * Consumes the native REDCap core hook redcap_save_record_changes(), which fires immediately
+     * after a record is saved and passes $changes: a name-keyed map of every changed field to its
+     * {old_value, new_value}. (Previously this was a module-injected custom hook,
+     * redcap_save_record_mon_qr, that passed only a flat list of changed field names.)
      */
-    function redcap_save_record_mon_qr($changedFields, $project_id, $record, $instrument, $event_id,
-                                 $group_id, $survey_hash, $response_id, $repeat_instance): void
+    function redcap_save_record_changes($project_id, $record, $instrument, $event_id,
+                                 $group_id, $survey_hash, $response_id, $repeat_instance, $changes): void
     {
-        //this is a custom hook injected into DataEntry.php; unlike standard hooks it fires for every project
-        //where the module is system-enabled, so explicitly bail unless enabled in this specific project
+        //standard core hooks fire for every project where the module is system-enabled,
+        //so explicitly bail unless enabled in this specific project
         if (!$this->isModuleEnabled($this->PREFIX, $project_id)) {
             return;
         }
 
         try {
-            $this->processSaveRecordMonQr($changedFields, $project_id, $record, $instrument, $event_id,
+            $this->processSaveRecordMonQr($changes, $project_id, $record, $instrument, $event_id,
                 $group_id, $survey_hash, $response_id, $repeat_instance);
         } catch (\Exception $e) {
             // Log the error but don't disrupt the save process
-            $this->log("Error in redcap_save_record_mon_qr", [
+            $this->log("Error in redcap_save_record_changes", [
                 "error" => $e->getMessage(),
                 "record" => $record,
                 "instrument" => $instrument,
@@ -1650,9 +1643,15 @@ makeFieldsReadonly($fields, $safeMonitorField);
      * Processes monitoring status updates when records are saved
      * @throws \Exception
      */
-    private function processSaveRecordMonQr($changedFields, $project_id, $record, $instrument, $event_id,
+    private function processSaveRecordMonQr($changes, $project_id, $record, $instrument, $event_id,
                                  $group_id, $survey_hash, $response_id, $repeat_instance): void
     {
+        // $changes is the name-keyed map [field => ['old_value'=>.., 'new_value'=>..]] delivered by the
+        // redcap_save_record_changes core hook. The monitoring logic below only needs the set of changed
+        // field NAMES, so derive that flat list here (preserving all existing name-based filtering).
+        // The per-field old/new detail remains available in $changes should a future rule need it.
+        $changedFields = is_array($changes) ? array_keys($changes) : [];
+
         // Preload all settings to reduce database round-trips
         $this->preloadProjectSettings();
 
