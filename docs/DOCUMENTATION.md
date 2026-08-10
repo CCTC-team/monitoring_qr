@@ -196,6 +196,16 @@ Each form requiring monitoring must include a dropdown field with a variable nam
 
 The status field is automatically managed by the module and hidden from users.
 
+### Configuration audit log
+
+`redcap_module_save_configuration($project_id)` records every configuration change to the module's **View Logs**
+page. On save it diffs the submitted settings against the values held beforehand and writes one
+`Configuration changed (project)` entry per changed key, carrying the setting name and its old and new values as
+log parameters — REDCap shows these to super-users via the **Show Parameters** button. The first save diffs against
+an empty baseline, so initial values are logged as `(empty) -> value`; settings left blank are not logged. Because
+this module has 12 required settings, that first save produces a correspondingly large batch of entries. It has no
+system-level settings, so the hook's system-scope branch never logs.
+
 ---
 
 ## Workflow
