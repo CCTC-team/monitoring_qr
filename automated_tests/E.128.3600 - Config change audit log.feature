@@ -69,7 +69,11 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I should see a table header and row containing the following values in a table:
       | Name      | Value                                     |
       | setting   | allow-data-managers-to-respond-to-queries |
+    And I should see a table header and row containing the following values in a table:
+      | Name      | Value                                     |
       | new_value | 1                                         |
+    And I should see a table header and row containing the following values in a table:
+      | Name      | Value                                     |
       | old_value | (empty)                                   |
     And I click on the button labeled "Close"
     Then I should see "External Module Logs"
@@ -79,7 +83,11 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I should see a table header and row containing the following values in a table:
       | Name      | Value                              |
       | setting   | include-field-label-in-inline-form |
+    And I should see a table header and row containing the following values in a table:
+      | Name      | Value                              |
       | new_value | 1                                  |
+    And I should see a table header and row containing the following values in a table:
+      | Name      | Value                              |
       | old_value | (empty)                            |
 
   Scenario: Changing a setting logs an old->new audit entry
@@ -111,7 +119,11 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I should see a table header and row containing the following values in a table:
       | Name      | Value                   |
       | setting   | monitoring-field-suffix |
+    And I should see a table header and row containing the following values in a table:
+      | Name      | Value                   |
       | new_value | _monstatus              |
+    And I should see a table header and row containing the following values in a table:
+      | Name      | Value                   |
       | old_value | _monstat                |
     And I click on the button labeled "Close"
     Then I should see "External Module Logs"
