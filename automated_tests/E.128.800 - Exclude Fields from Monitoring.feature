@@ -26,7 +26,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
  
   Scenario: Enable external module in project
     Given I create a new project named "E.128.800" by clicking on "New Project" in the menu bar, selecting "Practice / Just for fun" from the dropdown, choosing file "fixtures/cdisc_files/E128700.xml", and clicking the "Create Project" button
-    And I click on the link labeled "Manage"
+    And I click on the second link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
     And I should NOT see "Monitoring QR - v1.1.0"
     When I click on the button labeled "Enable a module"
@@ -168,7 +168,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I should NOT see a button named "comment"
 
     # E.128.800, E.128.1100, E.128.1200, E.128.1300, E.128.1400
-    Given I click on the link labeled "Manage"
+    Given I click on the second link labeled "Manage"
     And I click on the button labeled "Configure"
     Then I should see "Configure Module"
     And I scroll to the field labeled "When checked, users with the data manager role can also respond to monitors' queries"
@@ -238,7 +238,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     Given I login to REDCap with the user "Test_User2"
     When I click on the link labeled "My Projects"
     And I click on the link labeled "E.128.800"
-    And I click on the link labeled "Manage"
+    And I click on the second link labeled "Manage"
     Then I should see "Monitoring QR - v1.1.0"
     #And I should NOT see the button labeled "Disable"
     When I click on the button labeled "Configure"
@@ -269,7 +269,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     Given I login to REDCap with the user "Test_Admin"
     When I click on the link labeled "My Projects"
     And I click on the link labeled "E.128.800"
-    Given I click on the link labeled "Manage"
+    Given I click on the second link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
     And I should see "Monitoring QR - v1.1.0"
     When I click on the button labeled "Disable"

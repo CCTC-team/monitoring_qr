@@ -28,7 +28,7 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     # required fields precede them. The project fixture supplies the Monitor /
     # DataEntryPI / DataManager roles the role-list settings need.
     Given I create a new project named "E.128.3600.100" by clicking on "New Project" in the menu bar, selecting "Practice / Just for fun" from the dropdown, choosing file "fixtures/cdisc_files/E1281500.xml", and clicking the "Create Project" button
-    And I click on the link labeled "Manage"
+    And I click on the second link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
     When I click on the button labeled "Enable a module"
     And I click on the button labeled "Enable" in the row labeled "Monitoring QR - v1.1.0"
@@ -66,8 +66,8 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I should see a table header and row containing the following values in a table:
       | Name      | Value                                     |
       | setting   | allow-data-managers-to-respond-to-queries |
-      | old_value | (empty)                                   |
       | new_value | 1                                         |
+      | old_value | (empty)                                   |
     And I click on the button labeled "Close"
     Then I should see "External Module Logs"
 
@@ -76,8 +76,8 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I should see a table header and row containing the following values in a table:
       | Name      | Value                              |
       | setting   | include-field-label-in-inline-form |
-      | old_value | (empty)                            |
       | new_value | 1                                  |
+      | old_value | (empty)                            |
 
   Scenario: Changing a setting logs an old->new audit entry
     # rctf starts each scenario from a clean browser page, so re-navigate to the
@@ -85,7 +85,7 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     Given I login to REDCap with the user "Test_Admin"
     When I click on the link labeled "My Projects"
     And I click on the link labeled "E.128.3600.100"
-    And I click on the link labeled "Manage"
+    And I click on the second link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
     And I should see "Monitoring QR - v1.1.0"
 
@@ -108,8 +108,8 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I should see a table header and row containing the following values in a table:
       | Name      | Value                   |
       | setting   | monitoring-field-suffix |
-      | old_value | _monstat                |
       | new_value | _monstatus              |
+      | old_value | _monstat                |
     And I click on the button labeled "Close"
     Then I should see "External Module Logs"
 
