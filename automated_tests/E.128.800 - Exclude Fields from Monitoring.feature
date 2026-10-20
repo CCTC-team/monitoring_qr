@@ -3,7 +3,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
   As a REDCap end user
   I want to see that Monitoring QR is functioning as expected
 
-  Scenario: Verify external module is enabled in Control Center
+  Scenario: Enable external Module from Control Center
     Given I login to REDCap with the user "Test_Admin"
     When I click on the link labeled "Control Center"
     # EMAIL ADDRESS SET FOR REDCAP ADMIN - without it, emails are not send out from system
