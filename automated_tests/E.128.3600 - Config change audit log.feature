@@ -9,14 +9,14 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     When I click on the link labeled "Control Center"
     And I click on the link labeled "Manage"
     Then I should see "External Modules - Module Manager"
-    And I should NOT see "Monitoring QR - v1.1.0"
+    And I should NOT see "Monitoring QR - v1.1.1"
     When I click on the button labeled "Enable a module"
     And I wait for 2 seconds
     Then I should see "Available Modules"
     And I click on the button labeled "Enable" in the row labeled "Monitoring QR"
     And I wait for 1 second
     And I click on the button labeled "Enable"
-    Then I should see "Monitoring QR - v1.1.0"
+    Then I should see "Monitoring QR - v1.1.1"
 
   Scenario: First configuration save logs the initial values
     # This module has 12 REQUIRED settings, so the Configure form will not save
@@ -31,8 +31,8 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I click on the second link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
     When I click on the button labeled "Enable a module"
-    And I click on the button labeled "Enable" in the row labeled "Monitoring QR - v1.1.0"
-    Then I should see "Monitoring QR - v1.1.0"
+    And I click on the button labeled "Enable" in the row labeled "Monitoring QR - v1.1.1"
+    Then I should see "Monitoring QR - v1.1.1"
 
     Given I click on the button labeled "Configure"
     Then I should see "Configure Module"
@@ -52,7 +52,7 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I check the checkbox labeled "When checked, the first column in the inline table below the data entry"
     And I check the checkbox labeled "When checked, users with the data manager role can also respond to mon"
     Then I click on the button labeled "Save"
-    And I should see "Monitoring QR - v1.1.0"
+    And I should see "Monitoring QR - v1.1.1"
 
     #VERIFY - the audit trail on the module's own View Logs page
     When I click on the link labeled "View Logs"
@@ -87,14 +87,14 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I click on the link labeled "E.128.3600.100"
     And I click on the second link labeled "Manage"
     Then I should see "External Modules - Project Module Manager"
-    And I should see "Monitoring QR - v1.1.0"
+    And I should see "Monitoring QR - v1.1.1"
 
     # Change ONE setting, so it is the only entry this save produces.
     When I click on the button labeled "Configure"
     Then I should see "Configure Module"
     And I clear field and enter "_monstatus" into the input field labeled "Provide the suffix used to identify the monitoring field on a form"
     Then I click on the button labeled "Save"
-    And I should see "Monitoring QR - v1.1.0"
+    And I should see "Monitoring QR - v1.1.1"
 
     #VERIFY - the audit trail on the module's own View Logs page
     When I click on the link labeled "View Logs"
@@ -120,7 +120,7 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I click on the button labeled "Disable"
     Then I should see "Disable module?"
     When I click on the button labeled "Disable module"
-    Then I should NOT see "Monitoring QR - v1.1.0"
+    Then I should NOT see "Monitoring QR - v1.1.1"
 
   # Kept as its own scenario: "I open Email" leaves the browser on MailHog, a
   # different origin to REDCap, and appending it to the end of the scenario above

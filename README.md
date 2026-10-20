@@ -255,21 +255,21 @@ The suite is split across a `shard: [1, 2, 3, 4]` matrix, each shard running rou
 1. Checks out the Monitoring QR EM (this repo) into `monitoring_qr_em/`.
 2. Logs in to GHCR and pulls two prebuilt images: `redcap-aio` (REDCap + MariaDB + MailHog in one container via supervisord) and `cypress-runner-aio` (the suite with `rctf` + `redcap_rsvc` baked in).
 3. Stages the EM under test — strips `.git`/`.github` so only the module payload remains.
-4. Starts the AIO container (ports `8443`/`8025`, volume `cctc_mariadb_data`), bind-mounting **this commit's** EM over the image's `modules/monitoring_qr_v1.1.0` so REDCap serves the code under test with no rebuild.
+4. Starts the AIO container (ports `8443`/`8025`, volume `cctc_mariadb_data`), bind-mounting **this commit's** EM over the image's `modules/monitoring_qr_v1.1.1` so REDCap serves the code under test with no rebuild.
 5. Waits for REDCap to come up (first boot initialises the DB).
 6. Runs the runner image, which copies this module's `automated_tests` out of the container and runs only its `E.128.*` specs (excluding `*REDUNDANT*`), up to 3 attempts per spec, on Chromium. It reaches the DB/files over the mounted Docker socket and the UI over host networking. Sharding is applied at step 3 by deleting the `.feature` files that don't belong to this shard before the module is mounted, so the runner naturally enumerates only its own slice.
 7. Uploads the mochawesome reports (and, on failure, screenshots) as artifacts retained for 7 days, named per shard.
 
 **Follow-on jobs**
 - `prune-artifacts` — deletes artifacts from older runs, keeping only the latest 2.
-- `publish-report` — merges **every shard's** mochawesome JSON into one combined HTML report and publishes it to GitHub Pages **per module version**: this run's report lands at `/<EM_VERSION>/index.html` (e.g. `/v1.1.0/`) and the Pages root serves an index linking every published version, newest first. Previously published versions are preserved by restoring the cumulative site from the `pages-store` branch before the new version is added and the snapshot force-pushed back.
+- `publish-report` — merges **every shard's** mochawesome JSON into one combined HTML report and publishes it to GitHub Pages **per module version**: this run's report lands at `/<EM_VERSION>/index.html` (e.g. `/v1.1.1/`) and the Pages root serves an index linking every published version, newest first. Previously published versions are preserved by restoring the cumulative site from the `pages-store` branch before the new version is added and the snapshot force-pushed back.
 
 **Required repository secrets**
 - `CCTC_TEAM_PAT` — PAT with `read:packages` for the private `redcap-aio` / `cypress-runner-aio` GHCR images.
 
 **Version pins** (set as `env` at the top of the workflow)
 - `AIO_IMAGE` / `RUNNER_IMAGE` — the GHCR image refs; both must be built for the **same** REDCap version.
-- `EM_NAME` / `EM_VERSION` — `monitoring_qr` / `v1.1.0`. `EM_MODULE` (`monitoring_qr_v1.1.0`) is the directory REDCap discovers the module by and the runner uses to locate the specs. Bump `EM_VERSION`/`EM_MODULE` when releasing a new module version so the mount path and spec discovery stay aligned.
+- `EM_NAME` / `EM_VERSION` — `monitoring_qr` / `v1.1.1`. `EM_MODULE` (`monitoring_qr_v1.1.1`) is the directory REDCap discovers the module by and the runner uses to locate the specs. Bump `EM_VERSION`/`EM_MODULE` when releasing a new module version so the mount path and spec discovery stay aligned.
 
 ---
 
