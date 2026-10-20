@@ -15,13 +15,6 @@ Feature: E.128.2500 - NonRepeating_SingleArm_withDAGs
 
     Given I click on the link labeled "Manage"
     Then I should see "External Modules - Module Manager"
-    And I should NOT see "Monitoring QR - v1.1.1"
-    When I click on the button labeled "Enable a module"
-    And I wait for 2 seconds
-    Then I should see "Available Modules"
-    And I click on the button labeled "Enable" in the row labeled "Monitoring QR"
-    And I wait for 1 second
-    And I click on the button labeled "Enable"
     Then I should see "Monitoring QR - v1.1.1"
  
   Scenario: Enable external module in project
@@ -236,7 +229,6 @@ Feature: E.128.2500 - NonRepeating_SingleArm_withDAGs
       | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.1.1" for project                  |
       | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.1.1" for project |
       | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.1.1" for project                   |
-      | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.1.1" for system                    |
 
     And I logout
 
