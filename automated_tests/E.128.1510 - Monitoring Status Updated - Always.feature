@@ -87,7 +87,7 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "Monitor query status: NONE"
     And I should see a table header and rows containing the following values in a table:
       | Field             | Flags                            | Query to raise |
@@ -119,7 +119,7 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see a table header and rows containing the following values in a table:
       | Field             | Field value | Query  |
       | ptname            | Paul        | Query1 |
@@ -146,7 +146,7 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see the monitoring status "Verification in progress"
     And I should see "Monitor query status: OPEN"
     And I should see a table header and rows containing the following values in a table:
@@ -175,7 +175,7 @@ Feature: E.128.1500 - The system shall automatically update the monitoring statu
     And I click on the link labeled "E.128.1510" 
     When I click on the link labeled "Record Status Dashboard"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "Monitor query status: CLOSED"
     And I should see the monitoring status "Verified"
     And I should NOT see the monitoring table

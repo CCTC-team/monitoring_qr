@@ -102,7 +102,7 @@ Feature: E.128.900 - The system shall allow users to view monitoring queries inl
     Then I should see "Record Status Dashboard (all records)"
     # View and Edit Rights on Instrument
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     And I should see "This form has never had a monitor query raised. You can raise queries against any fields using the form below. Ignored fields are not shown."
     And I should see "Monitor query status: NONE"
     And I should see a table header and rows containing the following values in a table:
@@ -127,7 +127,7 @@ Feature: E.128.900 - The system shall allow users to view monitoring queries inl
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "Showing queried fields only. Waiting for responses."
     # VERIFY - E.128.900
     And I should NOT see "Query1" within the data entry field labeled "Name"
@@ -139,7 +139,7 @@ Feature: E.128.900 - The system shall allow users to view monitoring queries inl
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "Showing queried fields only. Waiting for responses."
     # VERIFY - E.128.900
     And I should NOT see "Query1" within the data entry field labeled "Name"
@@ -167,14 +167,14 @@ Feature: E.128.900 - The system shall allow users to view monitoring queries inl
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "Showing queried fields only"
     # VERIFY - E.128.900
     And I should NOT see "Query1" within the data entry field labeled "Name"
 
     Given I click on the link labeled "Record Status Dashboard"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "1"
+    And I click on the link in the column labeled "" and the row labeled "1"
     # VERIFY - E.128.1000
     And I should see a table header and rows containing the following values in a table:
       | Field             | Flags                            | Query to raise |
@@ -194,7 +194,7 @@ Feature: E.128.900 - The system shall allow users to view monitoring queries inl
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "Showing queried fields only. Waiting for responses."
     # VERIFY - E.128.900
     And I should see "Query1" within the data entry field labeled "Name"
@@ -206,7 +206,7 @@ Feature: E.128.900 - The system shall allow users to view monitoring queries inl
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "Showing queried fields only. Waiting for responses."
     # VERIFY - E.128.900
     And I should see "Query1" within the data entry field labeled "Name"
