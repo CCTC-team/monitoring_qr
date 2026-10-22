@@ -94,7 +94,7 @@ Feature: E.128.3000 - RepeatingInstruments_SingleArm_noDAGs
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "(Instance #3)"
     Then I should see "Monitor query status: NONE"
     And I should see a table header and rows containing the following values in a table:
@@ -130,7 +130,7 @@ Feature: E.128.3000 - RepeatingInstruments_SingleArm_noDAGs
     And I should NOT see a link labeled "Arm Two"
     And I should see a link labeled "2"
     And I click on the link labeled "1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "(Instance #3)"
     Then I should see a table header and rows containing the following values in a table:
       | Field             | Field value | Query  |
@@ -158,7 +158,7 @@ Feature: E.128.3000 - RepeatingInstruments_SingleArm_noDAGs
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "(Instance #3)"
     Then I should see the monitoring status "Verification in progress"
     And I should see "Monitor query status: OPEN"
@@ -187,7 +187,7 @@ Feature: E.128.3000 - RepeatingInstruments_SingleArm_noDAGs
     And I click on the link labeled "E.128.3000" 
     When I click on the link labeled "Record Status Dashboard"
     And I click on the link labeled "1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see "(Instance #3)"
     Then I should see "Monitor query status: CLOSED"
     And I should see the monitoring status "Verified"

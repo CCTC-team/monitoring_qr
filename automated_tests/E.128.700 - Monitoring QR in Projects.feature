@@ -107,7 +107,7 @@ Feature: E.128.700 - The system shall support the ability to set up Monitoring Q
     Then I should see "Record Status Dashboard (all records)"
     # View and Edit Rights on Instrument
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I enter "Query1" in the column "Query to raise" for the field "ptname"
     When I click on the button labeled "Raise monitor query"
     Then I should see the monitoring status "Verification in progress"
@@ -115,7 +115,7 @@ Feature: E.128.700 - The system shall support the ability to set up Monitoring Q
     Given I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "2"
+    And I click on the link in the column labeled "" and the row labeled "2"
     Then I enter "Query2" in the column "Query to raise" for the field "checkbox"
     And I click on the button labeled "Raise monitor query"
     Then I should see the monitoring status "Verification in progress"

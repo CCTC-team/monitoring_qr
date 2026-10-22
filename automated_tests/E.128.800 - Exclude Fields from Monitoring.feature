@@ -106,7 +106,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I click on the link labeled "E.128.800"
     And I click on the link labeled "Record Status Dashboard"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     # VERIFY -  E.128.1300
     Then I should see the field labeled "Name" disabled
     And I should see a button labeled "Save & Exit Form"
@@ -153,7 +153,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I click on the link labeled "E.128.800"
     And I click on the link labeled "Record Status Dashboard"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should NOT see a button labeled "Send response"
     And I logout
 
@@ -190,7 +190,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I click on the link labeled "E.128.800"
     And I click on the link labeled "Record Status Dashboard"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     Then I should see a button labeled "Send response"
     And I logout
 
@@ -200,7 +200,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
     And I click on the link labeled "Record Status Dashboard"
     Then I should see "Record Status Dashboard (all records)"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "3"
+    And I click on the link in the column labeled "" and the row labeled "3"
     And I should see a button labeled "Save & Exit Form"
     And I should see a button labeled "Cancel"
     # VERIFY -  E.128.1400
@@ -217,7 +217,7 @@ Feature: E.128.800 - The system shall support the ability to exclude fields from
 
     Given I click on the link labeled "Record Status Dashboard"
     And I click on the link labeled "1-1"
-    And I click on the icon in the column labeled "" and the row labeled "1"
+    And I click on the link in the column labeled "" and the row labeled "1"
     Then I should see a table header and rows containing the following values in a table:
       | Field             | Flags                            | Query to raise |
       | ptname            | @ENDPOINT-PRIMARY                |                |
