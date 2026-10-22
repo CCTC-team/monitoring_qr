@@ -12,9 +12,12 @@ The **Monitoring QR** module is a REDCap External Module designed to support Sou
 - Richard Hardy (University of Cambridge - Cambridge Cancer Trials Centre)
 - Mintoo Xavier (Cambridge University Hospital - Cambridge Cancer Trials Centre)
 
-### Compatibility
-- **PHP:** 8.0.27 - 8.2.29
-- **REDCap:** 13.8.1 - 15.9.1
+### Tested With
+The module has been tested with:
+- **PHP:** 8.2
+- **REDCap:** 13.8.1, 14.7.0, 15.5.36, 17.5.6
+
+`config.json` sets no PHP or REDCap version limits.
 
 ---
 
