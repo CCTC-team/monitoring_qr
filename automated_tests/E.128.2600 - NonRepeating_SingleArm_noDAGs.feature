@@ -114,7 +114,7 @@ Feature: E.128.2600 - NonRepeating_SingleArm_noDAGs
       | Field             | Field value | Query response [comment] | Reply | Query  |
       | ptname            |             |                          |       | Query1 |
       | notesbox          |             |                          |       | Query2 |
-      | checkbox          | [ 0, 0, 0 ] |                          |       | Query3 |
+      | checkbox          | [ 0, 1, 0 ] |                          |       | Query3 |
     
     And I should see the monitoring status "Verification in progress"
     And I should see "Monitor query status: OPEN"
@@ -134,7 +134,7 @@ Feature: E.128.2600 - NonRepeating_SingleArm_noDAGs
       | Field             | Field value | Query  |
       | ptname            |             | Query1 |
       | notesbox          |             | Query2 |
-      | checkbox          | [ 0, 0, 0 ] | Query3 |
+      | checkbox          | [ 0, 1, 0 ] | Query3 |
 
     And I should see the monitoring status "Verification in progress"
     And I should see "Monitor query status: OPEN"
@@ -163,7 +163,7 @@ Feature: E.128.2600 - NonRepeating_SingleArm_noDAGs
       | Field             | Field value | Query response [comment]                           |
       | ptname            |             | Value updated as per source                        |
       | notesbox          |             | Value correct, error in source updated [Response1] |
-      | checkbox          | [ 0, 0, 0 ] | Missing data not done [Response2]                  |
+      | checkbox          | [ 0, 1, 0 ] | Missing data not done [Response2]                  |
 
     When I click on the button labeled "Close as verified"
     Then I should see the monitoring status "Verified"
@@ -215,7 +215,7 @@ Feature: E.128.2600 - NonRepeating_SingleArm_noDAGs
     Then I should see a table header and row containing the following values in the logging table:
       | Time / Date      | Username   | Action                                                                      | List of Data Changes OR Fields Exported                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
       | mm/dd/yyyy hh:mm | test_admin | Disable external module "monitoring_qr_v1.1.1" for project                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.1.1" for project | reserved-hide-from-non-admins-in-project-list, monitoring-field-suffix, monitoring-flags-regex, monitoring-role, data-entry-roles, data-manager-role, monitoring-not-required-key, monitoring-requires-verification-key, monitoring-requires-verification-due-to-data-change-key, monitoring-field-verified-key, monitoring-verification-in-progress-key, trigger-requires-verification-for-change, monitoring-role-show-inline, data-entry-role-show-inline, data-manager-role-show-inline, monitors-only-query-flagged-fields, resolve-issues-behaviour, do-not-hide-save-and-cancel-buttons-for-non-data-entry, do-not-make-fields-readonly, include-field-label-in-inline-form |
+      | mm/dd/yyyy hh:mm | test_admin | Modify configuration for external module "monitoring_qr_v1.1.1" for project | reserved-hide-from-non-admins-in-project-list, monitoring-field-suffix, monitoring-flags-regex, monitoring-role, data-entry-roles, data-manager-role, monitoring-field-verified-key, monitoring-requires-verification-key, monitoring-requires-verification-due-to-data-change-key, monitoring-not-required-key, monitoring-verification-in-progress-key, trigger-requires-verification-for-change, monitoring-role-show-inline, data-entry-role-show-inline, data-manager-role-show-inline, monitors-only-query-flagged-fields, resolve-issues-behaviour, do-not-hide-save-and-cancel-buttons-for-non-data-entry, do-not-make-fields-readonly, include-field-label-in-inline-form |
       | mm/dd/yyyy hh:mm | test_admin | Enable external module "monitoring_qr_v1.1.1" for project                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
     # Disable external module in Control Center
