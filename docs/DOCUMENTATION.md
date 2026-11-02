@@ -15,7 +15,7 @@ The **Monitoring QR** module is a REDCap External Module designed to support Sou
 ### Tested With
 The module has been tested with:
 - **PHP:** 8.2
-- **REDCap:** 13.8.1, 14.7.0, 15.5.36, 17.5.6
+- **REDCap:** 13.8.1, 14.7.0, 15.5.36, 17.5.6, 17.5.9
 
 `config.json` sets no PHP or REDCap version limits.
 
@@ -37,7 +37,7 @@ This module enables monitors to:
 ### File Structure
 
 ```
-monitoring_qr_v1.1.1/
+monitoring_qr_v1.1.2/
 ├── config.json              # Module configuration and settings schema (includes auth-ajax-actions)
 ├── MonitoringQRModule.php   # Main module class extending AbstractExternalModule
 ├── Utility.php              # Date/time utilities and helper functions
@@ -143,8 +143,11 @@ When disabled at the system level, all injected code and the stored procedure ar
 ### Prerequisites
 
 1. The project must use **Data Resolution Workflow** (enabled in Project Setup)
-2. The project can be longitudinal with repeating instruments/events
-3. Only non-survey instruments support monitoring
+2. From REDCap 17.5.7, roles need the matching **Data Resolution Workflow** user right, because REDCap now checks it when the module raises, closes or responds to a query:
+   - monitor role: *Open, close, and respond to queries*
+   - data entry and data manager roles: at least *Respond only to opened queries*
+3. The project can be longitudinal with repeating instruments/events
+4. Only non-survey instruments support monitoring
 
 ### Required Project Settings
 
