@@ -923,9 +923,10 @@ function raiseVerificationQuery(ajaxPath, queryContent, field, pid, instance, ev
     let allQueries = JSON.stringify(queries);
        
     //apply the changes to db and ui
+    //REDCap 17.5.7+ rejects a new query unless status is explicitly 'OPEN'
     writeQueryAndChangeStatus(
-        ajaxPath, allQueries, field, pid, instance, 
-        event_id, record, reopen, null, 0, 
+        ajaxPath, allQueries, field, pid, instance,
+        event_id, record, reopen, 'OPEN', 0,
         verInProgressIndex, null, 1, instrument, changeMonitoringStatus)
 }
 
@@ -1072,9 +1073,10 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
     if(queries.length > 0) {        
         let allQueries = JSON.stringify(queries);        
         //apply the changes to db and ui
+        //REDCap 17.5.7+ rejects a send-back unless status is explicitly 'OPEN'
         writeQueryAndChangeStatus(
             ajaxPath, allQueries, field, pid, instance,
-            event_id, record, MonQR.QUERY_OPEN, null, 1,
+            event_id, record, MonQR.QUERY_OPEN, 'OPEN', 1,
             verInProgressIndex, null, 1, instrument, changeMonitoringStatus)
     }
     else {
@@ -1131,14 +1133,14 @@ function sendBackForFurtherAttention(ajaxPath, queryContent, field, pid, instanc
     data-ajax-path='$safeAjaxPath' data-monitor-field='$safeMonitorField' data-project-id='$project_id'
     data-repeat-instance='$repeat_instance' data-event-id='$event_id' data-record='$safeRecord'
     data-status='$verificationNotRequiredIndex' data-instrument='$safeInstrument'
-    onclick='writeQueryAndChangeStatus(this.dataset.ajaxPath, \"query closed as not required\", this.dataset.monitorField, this.dataset.projectId, this.dataset.repeatInstance, this.dataset.eventId, this.dataset.record, 0, \"CLOSED\", 0, this.dataset.status, null, 1, this.dataset.instrument, changeMonitoringStatus)'>
+    onclick='writeQueryAndChangeStatus(this.dataset.ajaxPath, \"query closed as not required\", this.dataset.monitorField, this.dataset.projectId, this.dataset.repeatInstance, this.dataset.eventId, this.dataset.record, 0, \"CLOSED\", 0, this.dataset.status, null, 0, this.dataset.instrument, changeMonitoringStatus)'>
     Close as not required
 </button>
 <button class='ml-4 btn btn-secondary btn-xs' type='button'
     data-ajax-path='$safeAjaxPath' data-monitor-field='$safeMonitorField' data-project-id='$project_id'
     data-repeat-instance='$repeat_instance' data-event-id='$event_id' data-record='$safeRecord'
     data-status='$verifiedCompletedIndex' data-instrument='$safeInstrument'
-    onclick='writeQueryAndChangeStatus(this.dataset.ajaxPath, \"query closed as verified\", this.dataset.monitorField, this.dataset.projectId, this.dataset.repeatInstance, this.dataset.eventId, this.dataset.record, 0, \"CLOSED\", 0, this.dataset.status, null, 1, this.dataset.instrument, changeMonitoringStatus)'>
+    onclick='writeQueryAndChangeStatus(this.dataset.ajaxPath, \"query closed as verified\", this.dataset.monitorField, this.dataset.projectId, this.dataset.repeatInstance, this.dataset.eventId, this.dataset.record, 0, \"CLOSED\", 0, this.dataset.status, null, 0, this.dataset.instrument, changeMonitoringStatus)'>
     Close as verified
 </button>
 $sendBackButton
