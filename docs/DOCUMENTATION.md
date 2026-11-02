@@ -15,7 +15,7 @@ The **Monitoring QR** module is a REDCap External Module designed to support Sou
 ### Tested With
 The module has been tested with:
 - **PHP:** 8.2
-- **REDCap:** 13.8.1, 14.7.0, 15.5.36, 17.5.6, 17.5.9
+- **REDCap:** 17.5.9. Requires REDCap 17.5.6 or later for the `redcap_save_record_changes` hook (v1.1.2 and earlier, which patched core themselves, were tested on 13.8.1, 14.7.0, 15.5.36 and 17.5.6)
 
 `config.json` sets no PHP or REDCap version limits.
 
@@ -37,7 +37,7 @@ This module enables monitors to:
 ### File Structure
 
 ```
-monitoring_qr_v1.1.2/
+monitoring_qr_v1.2.0/
 ├── config.json              # Module configuration and settings schema (includes auth-ajax-actions)
 ├── MonitoringQRModule.php   # Main module class extending AbstractExternalModule
 ├── Utility.php              # Date/time utilities and helper functions
@@ -120,19 +120,13 @@ When the module is enabled at the system level, it automatically:
 
 1. **Creates a stored procedure** (`GetMonitorQueries`) in the REDCap database for querying monitoring data
 
-2. **Injects code into Hooks.php** to create a custom hook:
-   ```php
-   public static function redcap_save_record_mon_qr($result){}
-   ```
+2. **Injects code into DataQuality.js** to support the monitoring UI
 
-3. **Injects code into DataEntry.php** to call the custom hook when records are saved:
-   ```php
-   Hooks::call('redcap_save_record_mon_qr', array($field_values_changed, ...));
-   ```
+3. **Removes any code an earlier version (up to v1.1.2) injected into Hooks.php and DataEntry.php**
 
-4. **Injects code into DataQuality.js** to support the monitoring UI
+Record saves are handled by REDCap core's `redcap_save_record_changes` hook (REDCap 17.5.6 or later), which passes the old and new value of every changed field. The module no longer patches `Hooks.php` or `DataEntry.php`.
 
-When disabled at the system level, all injected code and the stored procedure are automatically removed.
+When disabled at the system level, the injected code and the stored procedure are automatically removed.
 
 **Important:** When updating the module to a new version, disable and re-enable the module at the system level to ensure code injections are updated.
 
@@ -336,7 +330,7 @@ Accessed via the left menu link "Monitoring QR", this page provides:
 - AJAX actions declared in `config.json` via `auth-ajax-actions` for framework-level authentication
 
 ### Error Handling
-- `redcap_data_entry_form` and `redcap_save_record_mon_qr` hooks wrapped in try-catch blocks
+- `redcap_data_entry_form` and `redcap_save_record_changes` hooks wrapped in try-catch blocks
 - `MonQR_ajax.php` returns structured JSON error responses with logging
 - `setMonitorStatus` throws exceptions on errors for proper error propagation
 
@@ -382,7 +376,7 @@ Handles status updates via POST requests. Declared in `config.json` under `auth-
 - `redcap_module_system_disable` - Cleanup on system disable
 - `redcap_module_link_check_display` - Link visibility control
 - `redcap_data_entry_form` - Inject monitoring UI into data entry
-- `redcap_save_record_mon_qr` - Custom hook for post-save processing
+- `redcap_save_record_changes` - REDCap core hook (17.5.6+) for post-save processing, with old and new field values
 
 ---
 
