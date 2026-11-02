@@ -5,40 +5,36 @@
 The Monitoring QR module leverages the Data Resolution Workflow to support a monitoring workflow that can be kept
 independent of the main data resolution workflow.
 
-This module inserts code into the `Hooks.php` and `DataEntry.php` REDCap files when the module is enabled at a system
-level. The code is removed when the module is disabled.
+This module reacts to record saves via the native REDCap core hook `redcap_save_record_changes`, which fires
+immediately after a record is saved and provides the **old and new value of every changed field**. It also inserts a
+small UI tweak into `DataQuality.js` when enabled at a system level, and removes it when disabled.
+
+> **Note:** Versions up to v1.1.2 patched `Hooks.php` and `DataEntry.php` on enable to inject a custom
+> `redcap_save_record_mon_qr` hook. The module now uses the core hook `redcap_save_record_changes` instead, which
+> **requires REDCap 17.5.6 or later**. Enabling or disabling the module at system level removes any code an earlier
+> version inserted into those files.
 
 #### System set up ####
 
 > **Note:** This module has been tested with **MariaDB versions 10.5 and 10.11**. Please verify that the module works correctly with your specific database version before deploying to a production environment.
+
+**Record-save handling:** the module reacts to record saves through the core hook `redcap_save_record_changes`
+(fired from REDCap core's `Classes/DataEntry.php` through the External Modules framework). Core passes a per-field
+`{old_value, new_value}` change set to the module's `redcap_save_record_changes()` method, which uses it to decide
+whether a "Verification complete" monitoring status must revert to "Requires verification due to data change".
+The module does **not** patch `Hooks.php`/`DataEntry.php` itself.
 
 Enabling the module at a system level will AUTOMATICALLY do the following via the system hook
 `redcap_module_system_enable`;
 
 1. Create the `GetMonitorQueries` stored procedure in the REDCap database. This procedure is required to provide the log 
 of monitor queries
-1. Insert code in the `Hooks.php` file - the following is inserted after the first `call` function
-    ```php
-    //****** inserted by Monitoring QR module ******
-    public static function redcap_save_record_mon_qr($result){}
-    //****** end of insert ******
-    ```
-    This makes the new hook `redcap_save_record_mon_qr`available to the module
-
-1. Insert code in the `DataEntry.php` file - the following is inserted after the existing 
-   `Hooks::call('redcap_save_record'...` call around line 5909
-    ```php
-    //****** inserted by Monitoring QR module ******
-    Hooks::call('redcap_save_record_mon_qr', array($field_values_changed, PROJECT_ID, $fetched, $_GET['page'], $_GET['event_id'], $group_id, ($isSurveyPage ? $_GET['s'] : null), $response_id, $_GET['instance']));
-    //****** end of insert ******
-    ```
-    This executes the call to the hook `redcap_save_record_mon_qr` that is handled in the module 
+1. Insert a small UI tweak into the `DataQuality.js` file (hides the comments button in the Data Resolution view)
 
 Disabling the module at a system level will AUTOMATICALLY do the following via the system hook
 `redcap_module_system_disable`.
 1. Drop the `GetMonitorQueries` stored procedure in the REDCap database automatically
-1. Remove the code inserted into `Hooks.php`
-1. Remove the code inserted into `DataEntry.php`
+1. Remove the UI tweak inserted into `DataQuality.js`
 
 When a new version of the module becomes available, the module should be disabled and then re-enabled from the Control Center at the system level. Failure to do so may cause the module to malfunction.
 
@@ -258,21 +254,21 @@ The suite is split across a `shard: [1, 2, 3, 4]` matrix, each shard running rou
 1. Checks out the Monitoring QR EM (this repo) into `monitoring_qr_em/`.
 2. Logs in to GHCR and pulls two prebuilt images: `redcap-aio` (REDCap + MariaDB + MailHog in one container via supervisord) and `cypress-runner-aio` (the suite with `rctf` + `redcap_rsvc` baked in).
 3. Stages the EM under test — strips `.git`/`.github` so only the module payload remains.
-4. Starts the AIO container (ports `8443`/`8025`, volume `cctc_mariadb_data`), bind-mounting **this commit's** EM over the image's `modules/monitoring_qr_v1.1.2` so REDCap serves the code under test with no rebuild.
+4. Starts the AIO container (ports `8443`/`8025`, volume `cctc_mariadb_data`), bind-mounting **this commit's** EM over the image's `modules/monitoring_qr_v1.2.0` so REDCap serves the code under test with no rebuild.
 5. Waits for REDCap to come up (first boot initialises the DB).
 6. Runs the runner image, which copies this module's `automated_tests` out of the container and runs only its `E.128.*` specs (excluding `*REDUNDANT*`), up to 3 attempts per spec, on Chromium. It reaches the DB/files over the mounted Docker socket and the UI over host networking. Sharding is applied at step 3 by deleting the `.feature` files that don't belong to this shard before the module is mounted, so the runner naturally enumerates only its own slice.
 7. Uploads the mochawesome reports (and, on failure, screenshots) as artifacts retained for 7 days, named per shard.
 
 **Follow-on jobs**
 - `prune-artifacts` — deletes artifacts from older runs, keeping only the latest 2.
-- `publish-report` — merges **every shard's** mochawesome JSON into one combined HTML report and publishes it to GitHub Pages **per module version**: this run's report lands at `/<EM_VERSION>/index.html` (e.g. `/v1.1.2/`) and the Pages root serves an index linking every published version, newest first. Previously published versions are preserved by restoring the cumulative site from the `pages-store` branch before the new version is added and the snapshot force-pushed back.
+- `publish-report` — merges **every shard's** mochawesome JSON into one combined HTML report and publishes it to GitHub Pages **per module version**: this run's report lands at `/<EM_VERSION>/index.html` (e.g. `/v1.2.0/`) and the Pages root serves an index linking every published version, newest first. Previously published versions are preserved by restoring the cumulative site from the `pages-store` branch before the new version is added and the snapshot force-pushed back.
 
 **Required repository secrets**
 - `CCTC_TEAM_PAT` — PAT with `read:packages` for the private `redcap-aio` / `cypress-runner-aio` GHCR images.
 
 **Version pins** (set as `env` at the top of the workflow)
 - `AIO_IMAGE` / `RUNNER_IMAGE` — the GHCR image refs; both must be built for the **same** REDCap version.
-- `EM_NAME` / `EM_VERSION` — `monitoring_qr` / `v1.1.2`. `EM_MODULE` (`monitoring_qr_v1.1.2`) is the directory REDCap discovers the module by and the runner uses to locate the specs. Bump `EM_VERSION`/`EM_MODULE` when releasing a new module version so the mount path and spec discovery stay aligned.
+- `EM_NAME` / `EM_VERSION` — `monitoring_qr` / `v1.2.0`. `EM_MODULE` (`monitoring_qr_v1.2.0`) is the directory REDCap discovers the module by and the runner uses to locate the specs. Bump `EM_VERSION`/`EM_MODULE` when releasing a new module version so the mount path and spec discovery stay aligned.
 
 ---
 
