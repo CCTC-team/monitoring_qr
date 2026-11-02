@@ -25,8 +25,8 @@ Feature: E.128.100 - The system shall support the ability to enable/disable Moni
     And I should see a table header and row containing the following values in a table:
       | Module        | Message                                   | UserName   |
       | monitoring_qr | DataQuality.js code inserted successfully | Test_Admin |
-      | monitoring_qr | DataEntry.php code inserted successfully  | Test_Admin |
-      | monitoring_qr | Hooks.php code inserted successfully      | Test_Admin |
+      | monitoring_qr | DataEntry.php code not found (may already be removed) | Test_Admin |
+      | monitoring_qr | Hooks.php code not found (may already be removed) | Test_Admin |
       | monitoring_qr | Module system enable initiated            | Test_Admin |
 
     And I logout
@@ -50,12 +50,12 @@ Feature: E.128.100 - The system shall support the ability to enable/disable Moni
     And I should see a table header and row containing the following values in a table:
       | Module        | Message                                   | UserName   |
       | monitoring_qr | DataQuality.js code removed successfully  | Test_Admin |
-      | monitoring_qr | DataEntry.php code removed successfully   | Test_Admin |
-      | monitoring_qr | Hooks.php code removed successfully       | Test_Admin |
+      | monitoring_qr | DataEntry.php code not found (may already be removed) | Test_Admin |
+      | monitoring_qr | Hooks.php code not found (may already be removed) | Test_Admin |
       | monitoring_qr | Module system disable initiated           | Test_Admin |
       | monitoring_qr | DataQuality.js code inserted successfully | Test_Admin |
-      | monitoring_qr | DataEntry.php code inserted successfully  | Test_Admin |
-      | monitoring_qr | Hooks.php code inserted successfully      | Test_Admin |
+      | monitoring_qr | DataEntry.php code not found (may already be removed) | Test_Admin |
+      | monitoring_qr | Hooks.php code not found (may already be removed) | Test_Admin |
       | monitoring_qr | Module system enable initiated            | Test_Admin |
 
     And I logout
