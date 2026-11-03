@@ -259,10 +259,8 @@ hideCommentsButton();
         self::execFromFile("0010__create_GetMonitorQueries.sql");
         $this->log('Database objects created successfully');
 
-        //removes the Hooks.php/DataEntry.php code inserted by earlier versions, then adds the UI tweak
-        self::removeCodeFromFile(self::LegacyHookFilePath, self::LegacyHookCode);
-        self::removeCodeFromFile(self::LegacyDataEntryFilePath, self::LegacyDataEntryCode);
-        self::removeLegacyDataQualityCode();
+        //removes any code inserted by earlier versions, then adds the UI tweak
+        self::removeLegacyCode();
         self::addCodeToFile(self::DataQualityFilePath, self::DataQualitySearchTerm, self::DataQualityCode);
     }
 
@@ -276,18 +274,23 @@ hideCommentsButton();
         $this->log('Database objects dropped successfully');
 
         //removes the previously added code, including any left by earlier versions
-        self::removeCodeFromFile(self::LegacyHookFilePath, self::LegacyHookCode);
-        self::removeCodeFromFile(self::LegacyDataEntryFilePath, self::LegacyDataEntryCode);
         self::removeCodeFromFile(self::DataQualityFilePath, self::DataQualityCode);
-        self::removeLegacyDataQualityCode();
+        self::removeLegacyCode();
     }
 
-    //removes the unguarded DataQuality.js insert only if present, so a clean install logs nothing extra
-    function removeLegacyDataQualityCode(): void
+    //removes code inserted by earlier versions, only where present, so a clean install logs nothing extra
+    function removeLegacyCode(): void
     {
-        $contents = file_exists(self::DataQualityFilePath) ? file_get_contents(self::DataQualityFilePath) : false;
-        if ($contents !== false && str_contains($contents, self::LegacyDataQualityCode)) {
-            self::removeCodeFromFile(self::DataQualityFilePath, self::LegacyDataQualityCode);
+        $legacy = [
+            [self::LegacyHookFilePath, self::LegacyHookCode],
+            [self::LegacyDataEntryFilePath, self::LegacyDataEntryCode],
+            [self::DataQualityFilePath, self::LegacyDataQualityCode],
+        ];
+        foreach ($legacy as [$filePath, $code]) {
+            $contents = file_exists($filePath) ? file_get_contents($filePath) : false;
+            if ($contents !== false && str_contains($contents, $code)) {
+                self::removeCodeFromFile($filePath, $code);
+            }
         }
     }
 
