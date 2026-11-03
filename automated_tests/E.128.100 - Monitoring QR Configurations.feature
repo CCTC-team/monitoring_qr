@@ -25,12 +25,13 @@ Feature: E.128.100 - The system shall support the ability to enable/disable Moni
     And I should see a table header and row containing the following values in a table:
       | Module        | Message                                   | UserName   |
       | monitoring_qr | DataQuality.js code inserted successfully | Test_Admin |
+      | monitoring_qr | DataQuality.js code not found (may already be removed) | Test_Admin |
       | monitoring_qr | DataEntry.php code not found (may already be removed) | Test_Admin |
       | monitoring_qr | Hooks.php code not found (may already be removed) | Test_Admin |
       | monitoring_qr | Module system enable initiated            | Test_Admin |
 
     And I logout
-    
+
     Given I login to REDCap with the user "Test_User1"
     When I create a new project named "E.128.100" by clicking on "New Project" in the menu bar, selecting "Practice / Just for fun" from the dropdown, choosing file "fixtures/cdisc_files/Project_redcap_val_nodata.xml", and clicking the "Create Project" button
     #And I should NOT see a link labeled "Manage"
@@ -49,6 +50,7 @@ Feature: E.128.100 - The system shall support the ability to enable/disable Moni
     Then I should see "External Module Logs"
     And I should see a table header and row containing the following values in a table:
       | Module        | Message                                   | UserName   |
+      | monitoring_qr | DataQuality.js code not found (may already be removed) | Test_Admin |
       | monitoring_qr | DataQuality.js code removed successfully  | Test_Admin |
       | monitoring_qr | DataEntry.php code not found (may already be removed) | Test_Admin |
       | monitoring_qr | Hooks.php code not found (may already be removed) | Test_Admin |
@@ -56,7 +58,6 @@ Feature: E.128.100 - The system shall support the ability to enable/disable Moni
       | monitoring_qr | DataQuality.js code inserted successfully | Test_Admin |
       | monitoring_qr | DataEntry.php code not found (may already be removed) | Test_Admin |
       | monitoring_qr | Hooks.php code not found (may already be removed) | Test_Admin |
-      | monitoring_qr | Module system enable initiated            | Test_Admin |
 
     And I logout
 

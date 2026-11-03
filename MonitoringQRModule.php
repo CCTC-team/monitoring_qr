@@ -130,8 +130,16 @@ public static function redcap_save_record_mon_qr($result){}
 Hooks::call(\'redcap_save_record_mon_qr\', array($field_values_changed, PROJECT_ID, $fetched, $_GET[\'page\'], $_GET[\'event_id\'], $group_id, ($isSurveyPage ? $_GET[\'s\'] : null), $response_id, $_GET[\'instance\']));
 //****** end of insert ******' . PHP_EOL;
 
+    // DataQuality.js is core, so the insert runs in every project, but hideCommentsButton() is only
+    // defined in projects with the module enabled. Unguarded, the ReferenceError is thrown inside
+    // jQuery's success callback, which leaves jQuery.active stuck above zero.
     const DataQualityFilePath = APP_PATH_DOCROOT . "/Resources/js/DataQuality.js";
     const DataQualityCode =
+'//****** inserted by Monitoring QR module ******
+if (typeof hideCommentsButton === \'function\') hideCommentsButton();
+//****** end of insert ******' . PHP_EOL;
+    // Unguarded insert from versions up to v1.2.0; only kept so enable/disable can remove it
+    const LegacyDataQualityCode =
 '//****** inserted by Monitoring QR module ******
 hideCommentsButton();
 //****** end of insert ******' . PHP_EOL;
@@ -254,6 +262,7 @@ hideCommentsButton();
         //removes the Hooks.php/DataEntry.php code inserted by earlier versions, then adds the UI tweak
         self::removeCodeFromFile(self::LegacyHookFilePath, self::LegacyHookCode);
         self::removeCodeFromFile(self::LegacyDataEntryFilePath, self::LegacyDataEntryCode);
+        self::removeCodeFromFile(self::DataQualityFilePath, self::LegacyDataQualityCode);
         self::addCodeToFile(self::DataQualityFilePath, self::DataQualitySearchTerm, self::DataQualityCode);
     }
 
@@ -270,6 +279,7 @@ hideCommentsButton();
         self::removeCodeFromFile(self::LegacyHookFilePath, self::LegacyHookCode);
         self::removeCodeFromFile(self::LegacyDataEntryFilePath, self::LegacyDataEntryCode);
         self::removeCodeFromFile(self::DataQualityFilePath, self::DataQualityCode);
+        self::removeCodeFromFile(self::DataQualityFilePath, self::LegacyDataQualityCode);
     }
 
 
