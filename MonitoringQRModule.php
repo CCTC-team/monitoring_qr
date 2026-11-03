@@ -262,7 +262,7 @@ hideCommentsButton();
         //removes the Hooks.php/DataEntry.php code inserted by earlier versions, then adds the UI tweak
         self::removeCodeFromFile(self::LegacyHookFilePath, self::LegacyHookCode);
         self::removeCodeFromFile(self::LegacyDataEntryFilePath, self::LegacyDataEntryCode);
-        self::removeCodeFromFile(self::DataQualityFilePath, self::LegacyDataQualityCode);
+        self::removeLegacyDataQualityCode();
         self::addCodeToFile(self::DataQualityFilePath, self::DataQualitySearchTerm, self::DataQualityCode);
     }
 
@@ -279,7 +279,16 @@ hideCommentsButton();
         self::removeCodeFromFile(self::LegacyHookFilePath, self::LegacyHookCode);
         self::removeCodeFromFile(self::LegacyDataEntryFilePath, self::LegacyDataEntryCode);
         self::removeCodeFromFile(self::DataQualityFilePath, self::DataQualityCode);
-        self::removeCodeFromFile(self::DataQualityFilePath, self::LegacyDataQualityCode);
+        self::removeLegacyDataQualityCode();
+    }
+
+    //removes the unguarded DataQuality.js insert only if present, so a clean install logs nothing extra
+    function removeLegacyDataQualityCode(): void
+    {
+        $contents = file_exists(self::DataQualityFilePath) ? file_get_contents(self::DataQualityFilePath) : false;
+        if ($contents !== false && str_contains($contents, self::LegacyDataQualityCode)) {
+            self::removeCodeFromFile(self::DataQualityFilePath, self::LegacyDataQualityCode);
+        }
     }
 
 
