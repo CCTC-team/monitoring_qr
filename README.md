@@ -14,6 +14,17 @@ small UI tweak into `DataQuality.js` when enabled at a system level, and removes
 > **requires REDCap 17.5.6 or later**. Enabling or disabling the module at system level removes any code an earlier
 > version inserted into those files.
 
+#### Upgrading to v1.2.0 ####
+
+Admin actions when upgrading an existing installation from v1.1.x:
+
+1. Confirm REDCap is on **17.5.6 or later** (v1.2.0 relies on the core hook `redcap_save_record_changes`)
+1. After installing v1.2.0, **disable and then re-enable the module at system level** from the Control Center. This
+removes the code v1.1.x inserted into `Hooks.php` and `DataEntry.php`; View Logs shows the result of each removal
+1. On REDCap 17.5.7 or later, give each project's roles the Data Resolution Workflow rights the module needs: the
+monitor role 'Open, close, and respond to queries', and the data entry and data manager roles at least 'Respond only
+to opened queries' (see *Set up and module configuration by project*)
+
 #### System set up ####
 
 > **Note:** This module has been tested with **MariaDB versions 10.5 and 10.11**. Please verify that the module works correctly with your specific database version before deploying to a production environment.
