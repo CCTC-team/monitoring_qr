@@ -129,6 +129,7 @@ Feature: E.128.3700 - The system shall show filter values and monitoring query t
     Given I click on the link labeled "Monitoring QR"
     Then the Monitoring QR export requested directly should contain ' =1+1 query'
     And the Monitoring QR export requested directly should NOT contain '"=1+1 query'
+    And the Monitoring QR export requested directly should contain ',@ENDPOINT-PRIMARY,'
 
   Scenario: A date filter containing a script stays inside its input
     Given I click on the link labeled "Monitoring QR"

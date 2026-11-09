@@ -152,7 +152,10 @@ if ($fp && $result)
                     $row["response"] = $f->response;
                     $row["response_comment"] = $f->comment;
 
-                    fputcsv($fp, array_map([Utility::class, 'CsvSafe'], $row), $delim, '"', '\\');
+                    // flags are action tags from the field annotation, not entered values
+                    $safeRow = array_map([Utility::class, 'CsvSafe'], $row);
+                    $safeRow["flags"] = $row["flags"];
+                    fputcsv($fp, $safeRow, $delim, '"', '\\');
                 }
             } else {
 
