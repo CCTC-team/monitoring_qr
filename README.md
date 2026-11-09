@@ -103,10 +103,7 @@ from the monitoring workflow. Fields marked with this action tag cannot be monit
 1. Administrators can choose whether a field's query text can be shown inline with the question. Use the project 
 settings `monitoring-role-show-inline`, `data-entry-role-show-inline` and `data-manager-role-show-inline` to display
 or not based on the user's role
-1. Administrators can choose what happens with monitor queries on the Resolve Issues page. Use the project setting
-`resolve-issues-behaviour` to choose whether to keep the monitor queries in place and simply remove the interaction 
-button, or to completely remove the row from the table. Removing the row will automatically remove all the counts 
-given next to the filters as these are no longer correct as the removed rows are still counted
+1. On the Resolve Issues page, monitor queries stay in place and the button to interact with them is removed
 1. By default, monitors can raise sdv queries against any field on a form, unless the field has been marked to be 
 ignored. When checked, the project setting `monitors-only-query-flagged-fields` restricts the monitor to only be able
 to raise queries against flagged fields

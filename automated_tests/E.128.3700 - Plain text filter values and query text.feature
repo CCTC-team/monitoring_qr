@@ -82,8 +82,6 @@ Feature: E.128.3700 - The system shall show filter values and monitoring query t
     And I enter "1" into the input field labeled "Id of monitoring status field meaning 'Verification complete'"
     And I enter "5" into the input field labeled "Id of monitoring status field meaning 'Verification in progress'"
     And I select "Always whenever any field is updated" on the dropdown field labeled "A form's monitoring status is automatically set to 'Requires verification due to data change'"
-    And I scroll to the field labeled "When the user visits the Resolve Issues page, handle monitor status fields by"
-    And I select "Hiding the button to interact with the query but leave the row in place" on the dropdown field labeled "When the user visits the Resolve Issues page, handle monitor status fields by"
     Then I click on the button labeled "Save"
     And I should see "Monitoring QR - v1.2.0"
     And I logout

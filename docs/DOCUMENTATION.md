@@ -158,7 +158,6 @@ When disabled at the system level, the injected code and the stored procedure ar
 | `monitoring-not-required-key` | Dropdown index for "Not required" status |
 | `monitoring-verification-in-progress-key` | Dropdown index for "Verification in progress" status |
 | `trigger-requires-verification-for-change` | Behavior when verified data is changed |
-| `resolve-issues-behaviour` | How to handle monitoring queries on Resolve Issues page |
 
 ### Optional Project Settings
 
