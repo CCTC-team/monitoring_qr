@@ -131,6 +131,19 @@ Feature: E.128.3700 - The system shall show filter values and monitoring query t
     And the Monitoring QR export requested directly should NOT contain '"=1+1 query'
     And the Monitoring QR export requested directly should contain ',@ENDPOINT-PRIMARY,'
 
+  Scenario: The filter controls keep their values
+    Given I click on the link labeled "Monitoring QR"
+    When I click on the button labeled "Past month"
+    And I wait for 2 seconds
+    Then the Monitoring QR filter "defaulttimefilter" should have the value "onemonthago"
+    When I set the Monitoring QR filter "retdirection" to "asc"
+    Then the Monitoring QR filter "retdirection" should have the value "asc"
+    When I set the Monitoring QR filter "pagesize" to "10"
+    Then the Monitoring QR filter "pagesize" should have the value "10"
+    When I reset the Monitoring QR filters
+    Then the Monitoring QR filter "retdirection" should have the value "desc"
+    And the Monitoring QR filter "pagenum" should have the value "0"
+
   Scenario: A date filter containing a script stays inside its input
     Given I click on the link labeled "Monitoring QR"
     When I enter "'><script>window.mqInjected=1" into the Monitoring QR filter "enddt"

@@ -178,3 +178,29 @@ Given('the script from the Monitoring QR filter should not have run', () => {
         expect(win.mqInjected).to.equal(undefined)
     })
 })
+
+/**
+ * @module MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example I set the Monitoring QR filter {string} to {string}
+ * @param {string} id - id of the dropdown
+ * @param {string} value - option value
+ * @description Selects an option in a filter dropdown, which reloads the page
+ */
+Given("I set the Monitoring QR filter {string} to {string}", (id, value) => {
+    cy.get(`#${id}`).should('not.be.disabled').select(value)
+    cy.location('search').should('include', `${id}=${value}`)
+})
+
+
+/**
+ * @module MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example I reset the Monitoring QR filters
+ * @description Clicks the reset button on the filter form
+ */
+Given("I reset the Monitoring QR filters", () => {
+    cy.document().its('readyState').should('eq', 'complete')
+    cy.contains('button.clear-button', 'reset').then(($button) => $button[0].click())
+    cy.location('search').should('not.include', 'defaulttimefilter=')
+})
