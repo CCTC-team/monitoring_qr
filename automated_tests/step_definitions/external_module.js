@@ -1,6 +1,17 @@
 //Add any of your own step definitions here
 const { Given, defineParameterType } = require('@badeball/cypress-cucumber-preprocessor')
 
+// Requests the export page directly rather than through its buttons.
+function requestExport() {
+    return cy.url().then((url) => {
+        const pid = new URL(url).searchParams.get('pid')
+        return cy.window().then((win) => cy.request({
+            url: `${win.app_path_webroot}ExternalModules/?prefix=monitoring_qr&page=csv_export&pid=${pid}&export_type=everything`,
+            failOnStatusCode: false
+        }))
+    })
+}
+
 
 /**
  * @module MonitoringQR
@@ -101,4 +112,69 @@ Given('I should see a button labeled {string} disabled', (label) => {
  */
 Given('I should see the monitoring status {string}', (label) => {
     cy.get('tr[class=labelrc]').contains(label)
+})
+
+
+/**
+ * @module MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example I enter {string} into the Monitoring QR filter {string}
+ * @param {string} text - text to filter on
+ * @param {string} id - id of the filter input
+ * @description enters text in a filter input and submits the filter form
+ */
+Given('I enter {string} into the Monitoring QR filter {string}', (text, id) => {
+    cy.get(`#${id}`).invoke('val', text)
+    cy.get('#filterForm').then(($form) => $form[0].submit())
+    cy.get(`#${id}`).should('exist')
+})
+
+
+/**
+ * @module MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example the Monitoring QR filter {string} should have the value {string}
+ * @param {string} id - id of the filter input
+ * @param {string} value - expected value
+ * @description verifies the value shown by a filter input
+ */
+Given('the Monitoring QR filter {string} should have the value {string}', (id, value) => {
+    cy.get(`#${id}`).should('have.value', value)
+})
+
+
+/**
+ * @module MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example the Monitoring QR export requested directly should contain {string}
+ * @param {string} text - expected text
+ * @description verifies the export contains the text when the export page is requested directly
+ */
+Given('the Monitoring QR export requested directly should contain {string}', (text) => {
+    requestExport().its('body').should('include', text)
+})
+
+
+/**
+ * @module MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example the Monitoring QR export requested directly should NOT contain {string}
+ * @param {string} text - text that should be absent
+ * @description verifies the export does not contain the text when the export page is requested directly
+ */
+Given('the Monitoring QR export requested directly should NOT contain {string}', (text) => {
+    requestExport().its('body').should('not.include', text)
+})
+
+
+/**
+ * @module MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example the script from the Monitoring QR filter should not have run
+ * @description verifies a script supplied in a filter value was not executed by the page
+ */
+Given('the script from the Monitoring QR filter should not have run', () => {
+    cy.window().should((win) => {
+        expect(win.mqInjected).to.equal(undefined)
+    })
 })

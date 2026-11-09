@@ -11,6 +11,7 @@ $modName = $module->getModuleDirectoryName();
 require_once dirname(APP_PATH_DOCROOT, 1) . "/modules/$modName/MonitoringData.php";
 use CCTC\MonitoringQRModule\MonitoringData;
 use CCTC\MonitoringQRModule\MonitoringQRModule;
+use CCTC\MonitoringQRModule\Utility;
 
 // Increase memory limit in case needed for intensive processing
 //System::increaseMemory(2048);
@@ -114,7 +115,7 @@ if ($fp && $result)
         $delim = User::getCsvDelimiter();
 
         // Write headers to file
-        fputcsv($fp, $headers, $delim);
+        fputcsv($fp, $headers, $delim, '"', '\\');
 
         // Set values for this row and write to file
         foreach ($result as $row) {
@@ -151,7 +152,7 @@ if ($fp && $result)
                     $row["response"] = $f->response;
                     $row["response_comment"] = $f->comment;
 
-                    fputcsv($fp, $row, $delim);
+                    fputcsv($fp, array_map([Utility::class, 'CsvSafe'], $row), $delim, '"', '\\');
                 }
             } else {
 
@@ -162,7 +163,7 @@ if ($fp && $result)
                 $row["response"] = "";
                 $row["response_comment"] = "";
 
-                fputcsv($fp, $row, $delim);
+                fputcsv($fp, array_map([Utility::class, 'CsvSafe'], $row), $delim, '"', '\\');
             }
         }
 

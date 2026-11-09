@@ -47,8 +47,9 @@ if(!empty($monIgnore)) {
 
 //check the regex is a valid one
 if (preg_match('/'.$regex.'/', '') === false) {
+    $safeRegex = $module->escape($regex);
     echo "<div class='red'>
-        <p>The regex $regex is not valid - do not include the leading and trailing slashes in your config</p>
+        <p>The regex $safeRegex is not valid - do not include the leading and trailing slashes in your config</p>
         <p>Change the setting 'monitoring-flags-regex' ensuring it is a valid regular expression</p>
 </div>";
     return;
@@ -172,6 +173,10 @@ if($showingCount < $pageSize) {
 $pagingInfo = "records {$skipFrom} to {$skipTo} of {$totalCount}";
 $csvExportPage = $module->getUrl('csv_export.php');
 
+$safeMinDate = $module->escape($minDate ?? '');
+$safeMaxDate = $module->escape($maxDate ?? '');
+$safeQueryText = $module->escape($queryText ?? '');
+
 echo "
 <script>
     function resetForm() {
@@ -205,11 +210,11 @@ echo "
             </tr>            
             <tr>
                 <td><label style='margin-top: 10px'>Min edit date</label></td>
-                <td><input id='startdt' style='width: 150px' name='startdt' class='x-form-text x-form-field' type='text' data-df='$userDateFormat' value='$minDate'></td>
+                <td><input id='startdt' style='width: 150px' name='startdt' class='x-form-text x-form-field' type='text' data-df='$userDateFormat' value='$safeMinDate'></td>
                 <td><button class='clear-button' type='button' onclick='resetDate(\"startdt\")'><small><i class='fas fa-eraser'></i></small></button></td>
 
                 <td><label>Max edit date</label></td>
-                <td><input id='enddt' name='enddt' class='x-form-text x-form-field' type='text' data-df='$userDateFormat' value='$maxDate'></td>
+                <td><input id='enddt' name='enddt' class='x-form-text x-form-field' type='text' data-df='$userDateFormat' value='$safeMaxDate'></td>
                 <td><button style='margin-left: 0' class='clear-button' type='button' onclick='resetDate(\"enddt\")'><small><i class='fas fa-eraser'></i></small></button></td>
                 <td>
                     <div style='margin-left:10px; ' class='btn-group bg-white' role='group'>
@@ -259,7 +264,7 @@ echo "
                 <td>
                     <div style='display: flex; flex-direction: row'>                        
                         <div><input id='dataquerytext' name='dataquerytext' type='text' size='20' maxlength='100'
-                            value='$queryText'
+                            value='$safeQueryText'
                             class='x-form-text x-form-field ui-autocomplete-input' autocomplete='off'
                             onchange='onFilterChanged(\"querytext\")'>
                           </div>                                            

@@ -9,6 +9,48 @@ require_once APP_PATH_DOCROOT . "/Classes/DateTimeRC.php";
 
 class Utility
 {
+    // SQL escaping is handled by mysqli_real_escape_string in MonitoringData.php, and HTML escaping at output
+    public static function sanitizeString($value, int $maxLength = 255): ?string
+    {
+        if (!is_scalar($value) || $value === '') {
+            return null;
+        }
+        return substr(trim((string)$value), 0, $maxLength);
+    }
+
+    public static function validateInt($value, int $min = 0, int $max = PHP_INT_MAX): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        $filtered = filter_var($value, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => $min, 'max_range' => $max]
+        ]);
+        return $filtered !== false ? $filtered : null;
+    }
+
+    // returns the matching entry from the list, so the input itself is never returned
+    public static function allowedValue($value, array $allowed, string $default): string
+    {
+        foreach ($allowed as $candidate) {
+            if ($value === $candidate) {
+                return $candidate;
+            }
+        }
+        return $default;
+    }
+
+    // stops a value being run as a formula when a CSV export is opened in a spreadsheet, by adding a leading
+    // space to text starting with a formula character. Numbers such as -5 are left as they are
+    public static function CsvSafe($value)
+    {
+        if ($value === null || is_numeric($value)) {
+            return $value;
+        }
+
+        $text = (string)$value;
+        return in_array(substr($text, 0, 1), ['=', '+', '-', '@', "\t", "\r"], true) ? " $text" : $text;
+    }
 
     public static function MakeFormLink($projectId, $recordId, $eventId, $formName, $instance): string
     {
@@ -16,9 +58,13 @@ class Utility
 
         if($instance !== null)
         {
-            $instance = "&instance=" . $instance;
+            $instance = "&instance=" . rawurlencode((string)$instance);
         }
-        return "<a href='{$baseUrl}DataEntry/index.php?pid={$projectId}&id={$recordId}&event_id={$eventId}&page={$formName}{$instance}'><i class='fas fa-eye'></i></a>";
+
+        $query = "pid=" . rawurlencode((string)$projectId) . "&id=" . rawurlencode((string)$recordId)
+            . "&event_id=" . rawurlencode((string)$eventId) . "&page=" . rawurlencode((string)$formName);
+
+        return "<a href='{$baseUrl}DataEntry/index.php?{$query}{$instance}'><i class='fas fa-eye'></i></a>";
     }
 
     // groups an array
