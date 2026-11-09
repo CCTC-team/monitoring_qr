@@ -6,10 +6,23 @@ use DateTime;
 
 class Rendering
 {
+    // decodes first so a value already stored with entities is not escaped twice
+    private static function text($value): string
+    {
+        return htmlspecialchars(replaceNBSP(label_decode((string)$value, false)), ENT_QUOTES | ENT_SUBSTITUTE);
+    }
+
     //create the base row
     static function createRow($numRows, $ts, $username, $summaryStatus, $monStatus, $arr, $projId): string
     {
         $goLink = Utility::MakeFormLink($projId, $arr['record'], $arr['event_id'], $arr['form_name'], $arr['instance']);
+        $username = self::text($username);
+        $monStatus = self::text($monStatus);
+        $record = self::text($arr['record']);
+        $formName = self::text($arr['form_name']);
+        $eventName = self::text($arr['event_name']);
+        $eventId = self::text($arr['event_id']);
+        $instance = self::text($arr['instance']);
 
         return
             "<tr>
@@ -18,10 +31,10 @@ class Rendering
         <td rowspan='$numRows'>$username</td>
         <td rowspan='$numRows'>$summaryStatus</td>
         <td rowspan='$numRows'>$monStatus</td>
-        <td rowspan='$numRows'>{$arr['record']}</td>
-        <td rowspan='$numRows'>{$arr['form_name']}</td>
-        <td rowspan='$numRows'>{$arr['event_name']} [{$arr['event_id']}]</td>
-        <td rowspan='$numRows'>{$arr['instance']}</td>";
+        <td rowspan='$numRows'>$record</td>
+        <td rowspan='$numRows'>$formName</td>
+        <td rowspan='$numRows'>$eventName [$eventId]</td>
+        <td rowspan='$numRows'>$instance</td>";
     }
 
     //make the row for when the query is closed
@@ -39,12 +52,13 @@ class Rendering
         if($rowI == 1) {
             $idData = self::createRow($numRows, $ts, $username, $summaryStatus, $monStatus, $arr, $projId);
         }
-        $response = $comment === null || $comment === "" ? "$response" : "$response<br/>[$comment]";
+        $response = self::text($response);
+        $response = $comment === null || $comment === "" ? $response : $response . "<br/>[" . self::text($comment) . "]";
         return
             "<tr>$idData"
-            . "<td>$field [$fieldLabel]</td>"
+            . "<td>" . self::text($field) . " [" . self::text(strip_tags2((string)$fieldLabel)) . "]</td>"
             . "<td>$flags</td>"
-            . "<td>$query</td>"
+            . "<td>" . self::text($query) . "</td>"
             . "<td>$response</td>"
             . "</tr>";
     }
@@ -99,21 +113,21 @@ class Rendering
             $monStatus = explode(",", $arr['mon_stat_value'])[1];
 
             if(json_last_error() == JSON_ERROR_NONE) {
-                $summaryStatus = $arr['current_query_status'];
+                $summaryStatus = self::text($arr['current_query_status']);
 
                 $rowI = 1;
                 $numRows = count($json);
                 foreach ($json as $f) {
                     $ret .=
                         self::createOpenRow($rowI, $numRows, $ts, $username, $summaryStatus, $monStatus, $arr, $f->field, $f->field_label,
-                            str_replace(" | ", "<br/>", $f->flags), $f->query, $f->response, $f->comment, $projId);
+                            str_replace(" | ", "<br/>", self::text($f->flags)), $f->query, $f->response, $f->comment, $projId);
                     $rowI += 1;
                 }
             } else {
                 $summaryStatus =
                     $ts == $noDate
-                    ? $arr['current_query_status']
-                    : $arr['current_query_status'] . "<br/>[{$arr['comment']}]";
+                    ? self::text($arr['current_query_status'])
+                    : self::text($arr['current_query_status']) . "<br/>[" . self::text($arr['comment']) . "]";
                 $ret .= self::createClosedRow($ts, $username, $summaryStatus, $monStatus, $arr, $projId);
             }
         }
@@ -216,9 +230,10 @@ class Rendering
         $evnts = "<option value='' $anySelected>any event</option>";
         foreach ($events as $evnt) {
             $id = $evnt["eventId"];
-            $display = self::displayFromParts($id, $evnt["eventName"]);
+            $display = self::text(self::displayFromParts($id, $evnt["eventName"]));
             $sel = $selected == $id ? "selected" : "";
-            $evnts .= "<option value='$id' {$sel}>$display</option>";
+            $value = self::text($id);
+            $evnts .= "<option value='$value' {$sel}>$display</option>";
         }
 
         return
@@ -233,7 +248,8 @@ class Rendering
         $usrnames = "<option value='' $anySelected>any username</option>";
         foreach ($usernames as $usrname) {
             $sel = $selected == $usrname ? "selected" : "";
-            $usrnames .= "<option value='{$usrname}' {$sel}>{$usrname}</option>";
+            $text = self::text($usrname);
+            $usrnames .= "<option value='{$text}' {$sel}>{$text}</option>";
         }
 
         return
@@ -248,9 +264,10 @@ class Rendering
         $insts = "<option value='' $anySelected>any instance</option>";
         foreach ($instances as $inst) {
             $id = $inst == null ? -1 : $inst;
-            $display = $id == -1 ? $noInstance : $inst;
+            $display = self::text($id == -1 ? $noInstance : $inst);
             $sel = $selected == $id ? "selected" : "";
-            $insts .= "<option value='$id' {$sel}>$display</option>";
+            $value = self::text($id);
+            $insts .= "<option value='$value' {$sel}>$display</option>";
         }
 
         return
@@ -265,7 +282,8 @@ class Rendering
         $forms = "<option value='' $anySelected>any form</option>";
         foreach ($frms as $frm) {
             $sel = $selected == $frm ? "selected" : "";
-            $forms .= "<option value='{$frm}' {$sel}>{$frm}</option>";
+            $text = self::text($frm);
+            $forms .= "<option value='{$text}' {$sel}>{$text}</option>";
         }
 
         return
@@ -297,7 +315,8 @@ class Rendering
         $fields = "<option value='' $anySelected>any field</option>";
         foreach ($distinct as $fld) {
             $sel = $selected == $fld ? "selected" : "";
-            $fields .= "<option value='{$fld}' {$sel}>{$fld}</option>";
+            $text = self::text($fld);
+            $fields .= "<option value='{$text}' {$sel}>{$text}</option>";
         }
 
         return
@@ -330,7 +349,8 @@ class Rendering
         $flags = "<option value='' $anySelected>any flag</option>";
         foreach ($distinct as $flg) {
             $sel = $selected == $flg ? "selected" : "";
-            $flags .= "<option value='{$flg}' {$sel}>{$flg}</option>";
+            $text = self::text($flg);
+            $flags .= "<option value='{$text}' {$sel}>{$text}</option>";
         }
 
         return
@@ -352,7 +372,8 @@ class Rendering
         $responses .= "<option value='no-response' $noResponseSelected>no response</option>";
         foreach ($distinct as $resp) {
             $sel = $selected == $resp ? "selected" : "";
-            $responses .= "<option value='{$resp}' {$sel}>{$resp}</option>";
+            $text = self::text($resp);
+            $responses .= "<option value='{$text}' {$sel}>{$text}</option>";
         }
 
         return

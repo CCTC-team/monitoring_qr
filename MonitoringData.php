@@ -27,8 +27,7 @@ class MonitoringData
     // Validates direction parameter (only allows 'asc' or 'desc')
     private static function validateDirection($value): string
     {
-        $value = strtolower((string)$value);
-        return in_array($value, ['asc', 'desc']) ? $value : 'desc';
+        return strtolower((string)$value) === 'asc' ? 'asc' : 'desc';
     }
 
     // Validates query status parameter
@@ -37,8 +36,14 @@ class MonitoringData
         if ($value === null || $value === 'ANY') {
             return null;
         }
-        $allowed = ['OPEN', 'CLOSED', 'NONE', 'NOT-OPEN', 'NOT-CLOSED', 'NOT-NONE'];
-        return in_array(strtoupper((string)$value), $allowed) ? strtoupper((string)$value) : null;
+        $allowed = ['OPEN', 'CLOSED', 'NONE', '^OPEN', '^CLOSED', '^NONE'];
+        $status = strtoupper((string)$value);
+        foreach ($allowed as $candidate) {
+            if ($status === $candidate) {
+                return $candidate;
+            }
+        }
+        return null;
     }
 
     // calls the GetMonitorQueries stored procedure with the given parameters and returns the relevant data
