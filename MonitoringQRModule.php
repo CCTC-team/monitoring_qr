@@ -370,12 +370,6 @@ hideCommentsButton();
             }
         }
 
-        if (array_key_exists("resolve-issues-behaviour", $settings)) {
-            if(empty($settings['resolve-issues-behaviour'])) {
-                return "Field to handle the behaviour of monitoring status field in Resolve Issues page should not be empty";
-            }
-        }
-
         return null;
     }
 
@@ -1494,12 +1488,11 @@ function respondToQuery(ajaxPath, queryContent, field, pid, instance, event_id, 
         $idNotRequired = $this->getCachedProjectSetting("monitoring-not-required-key");
         $idVerficationInProgress = $this->getCachedProjectSetting("monitoring-verification-in-progress-key");
         $triggerRequiresVerification = $this->getCachedProjectSetting("trigger-requires-verification-for-change");
-        $resolveIssues = $this->getCachedProjectSetting("resolve-issues-behaviour");
 
          //if the mandatory fields are not set, then do nothing
         if (empty($monFieldSuffix) || empty($monFlagRegex) || empty($monRole) || empty($deRoles[0]) || empty($dmRole)
          || empty($idVerified) || empty($idRequiresVerification) || empty($idVerificationDataChange)
-         || empty($idNotRequired) || empty($idVerficationInProgress) || empty($triggerRequiresVerification) || empty($resolveIssues)) {
+         || empty($idNotRequired) || empty($idVerficationInProgress) || empty($triggerRequiresVerification)) {
             echo "<script type='text/javascript'>
                     alert('Please ensure the mandatory fields in the Monitoring QR External Module are configured.');
                 </script>";
@@ -1894,14 +1887,7 @@ makeFieldsReadonly($fields, $safeMonitorField);
 
         /*
             - uses javascript to handle the data quality resolve page to ensure consistency
-            - when the setting resolve-issues-behaviour is;
-                - removing-row
-                    - it removes any queries that relate to monitoring i.e. have the mon status field suffix, by
-                        removing the row in the table
-                    - due to the impact on the counts in the tab and dropdowns, it simply rewrites those
-                        to exclude the counts that are given
-                - hiding-button
-                    - simply removes the button allowing interaction with the query but leaves everything else as is
+            - removes the button allowing interaction with a monitoring query but leaves the row in place as is
          */
 
         $lang = Language::getLanguage('English');
@@ -1916,45 +1902,7 @@ makeFieldsReadonly($fields, $safeMonitorField);
         $monFieldSuffix = $this->getCachedProjectSetting("monitoring-field-suffix");
         $regex = "/\w+$monFieldSuffix/";
 
-        $rowBehaviour = $this->getCachedProjectSetting("resolve-issues-behaviour");
-        if($rowBehaviour == "hiding-button"){
-            $hideFunction = "keepMonitorRowsButHideButton";
-        } else {
-            $hideFunction = "removeMonitorRows";
-        }
-
         echo "<script type='text/javascript'>
-            
-            //script uses a regex to find rows in the table that are monitoring fields and removes them if so
-            //uses a regex to match fields that end in the monitoring status suffix
-            async function removeMonitorRows() {                   
-                let regexMatchMonStatForm = $regex;
-                
-                let table = document.getElementById('table-dq_resolution_table');
-                if(table) {                    
-                    let rows = table.getElementsByTagName('tr');
-                    let rowsToRemove = [];
-                    
-                    for (let i = 0; i < rows.length; i++) { 
-                        let cells = rows[i].getElementsByTagName('td');   
-                        let fieldContent = cells[2].textContent.trim();
-                        let match = fieldContent.match(regexMatchMonStatForm);
-                        
-                        if(match) {                        
-                            rowsToRemove.push(i);                        
-                        }                                        
-                    }
-    
-                    for (let k = rowsToRemove.length - 1; k >= 0; k--) {
-                        table.deleteRow(rowsToRemove[k]);                                            
-                    }
-                    
-                    return rowsToRemove.length;
-                }
-                
-                //nothing happened so just return 0 changes to table
-                return 0;
-            }
             
             //leaves the row in place, but hides the button that allows a user to interact with the query            
             async function keepMonitorRowsButHideButton() {
@@ -1973,7 +1921,7 @@ makeFieldsReadonly($fields, $safeMonitorField);
             } 
 
 //            function hideCountsIfHidingRows() {
-//                if('$hideFunction' == 'removeMonitorRows' ) {        
+//                if('keepMonitorRowsButHideButton' == 'removeMonitorRows' ) {        
 //                    
 //                    console.log('hiding values');
 //                    //fix the count displays that may be wrong as the monitor queries have been removed
@@ -2008,7 +1956,7 @@ makeFieldsReadonly($fields, $safeMonitorField);
 //                    observer.disconnect();
 //                    
 //                    
-//                    let removedRows = await $hideFunction();                                    
+//                    let removedRows = await keepMonitorRowsButHideButton();                                    
 //                    hideCountsIfHidingRows();
 //                    
 //                    //hide any fields in the field list that are monitoring queries                
@@ -2038,7 +1986,7 @@ makeFieldsReadonly($fields, $safeMonitorField);
             //for now, this just hides the buttons as hiding rows is disabled as not working correctly.
             document.addEventListener('DOMContentLoaded', function() {                                                                
                 (async function() {
-                    let rows = await $hideFunction();                    
+                    let rows = await keepMonitorRowsButHideButton();                    
                     //hideCountsIfHidingRows();
                 })();
                 
@@ -2081,7 +2029,7 @@ makeFieldsReadonly($fields, $safeMonitorField);
 //                        });    
 //                            
 //                        (async function() {
-//                            let rows = await $hideFunction();                    
+//                            let rows = await keepMonitorRowsButHideButton();                    
 //                            hideCountsIfHidingRows();
 //                        })();
 //                        }

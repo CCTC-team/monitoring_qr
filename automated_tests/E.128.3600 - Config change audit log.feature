@@ -50,8 +50,6 @@ Feature: E.128.3600 - The system shall record configuration changes for the Moni
     And I enter "1" into the input field labeled "Id of monitoring status field meaning 'Verification complete'"
     And I enter "5" into the input field labeled "Id of monitoring status field meaning 'Verification in progress'"
     And I select "When the updated field is flagged" on the dropdown field labeled "A form's monitoring status is automatically set to 'Requires verification due to data change'"
-    And I scroll to the field labeled "When the user visits the Resolve Issues page, handle monitor status fields by"
-    And I select "Hiding the button to interact with the query but leave the row in place" on the dropdown field labeled "When the user visits the Resolve Issues page, handle monitor status fields by"
     And I check the checkbox labeled "When checked, the first column in the inline table below the data entry"
     And I check the checkbox labeled "When checked, users with the data manager role can also respond to mon"
     Then I click on the button labeled "Save"

@@ -166,16 +166,6 @@
       "super-users-only": true
     },
     {
-      "key": "resolve-issues-behaviour",
-      "name": "When the user visits the Resolve Issues page, handle monitor status fields by",
-      "super-users-only": true,
-      "required": true,
-      "type": "dropdown",
-      "choices": [
-        { "value": "hiding-button", "name": "Hiding the button to interact with the query but leave the row in place" }
-      ]
-    },
-    {
       "key": "do-not-hide-save-and-cancel-buttons-for-non-data-entry",
       "name": "When checked, the save and cancel buttons are not hidden when the user is not a data entry user i.e. users other than data entry can interact with the form",
       "type": "checkbox",
