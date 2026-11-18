@@ -115,6 +115,7 @@ Feature: E.128.3700 - The system shall show filter values and monitoring query t
     And I should see "No records matching your query were found."
     And the script from the Monitoring QR filter should not have run
 
+  # "currentstatus" is the page ID of the "Query status" dropdown; the value "NOT-OPEN" is the option shown as "not OPEN"
   Scenario: The negated query status filters exclude the matching status
     Given I click on the link labeled "Monitoring QR"
     When I enter "NOT-OPEN" into the Monitoring QR filter "currentstatus"
@@ -123,12 +124,22 @@ Feature: E.128.3700 - The system shall show filter values and monitoring query t
     When I enter "OPEN" into the Monitoring QR filter "currentstatus"
     Then I should see "O'Brien <b>bold</b> query"
 
+  # These steps check the raw CSV text, not the file opened in Excel (Excel uses the commas as column separators).
+  # Values starting with = + - or @ get a leading space so a spreadsheet won't run them as formulas.
+  # The Flags column (action tags such as @ENDPOINT-PRIMARY) is left as it is, so the surrounding commas
+  # show the cell is exactly "@ENDPOINT-PRIMARY" with no space added
   Scenario: The export protects spreadsheet users from formula values
     Given I click on the link labeled "Monitoring QR"
     Then the Monitoring QR export requested directly should contain ' =1+1 query'
     And the Monitoring QR export requested directly should NOT contain '"=1+1 query'
     And the Monitoring QR export requested directly should contain ',@ENDPOINT-PRIMARY,'
 
+  # Filters are found by their page ID (the name also used in the page URL), not their on-screen label:
+  #   "defaulttimefilter" - hidden field set by the "Past month" button (the visible result is the "Min edit date")
+  #   "retdirection"      - the "Order by" dropdown ("asc" = Ascending, "desc" = Descending)
+  #   "pagesize"          - the "Page size" dropdown
+  #   "pagenum"           - hidden field holding the current page number (first page = 0); not visible on screen,
+  #                         use the browser's Inspect to see it
   Scenario: The filter controls keep their values
     Given I click on the link labeled "Monitoring QR"
     When I click on the button labeled "Past month"
