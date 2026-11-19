@@ -1,6 +1,15 @@
 //Add any of your own step definitions here
 const { Given, defineParameterType } = require('@badeball/cypress-cucumber-preprocessor')
 
+defineParameterType({
+    name: 'emTableName',
+    regexp: /monitoring logging/
+})
+
+const emTableName = {
+    'monitoring logging' : '#monitor-query-data-log-table'
+}
+
 // Requests the export page directly rather than through its buttons.
 function requestExport() {
     return cy.url().then((url) => {
@@ -203,4 +212,77 @@ Given("I reset the Monitoring QR filters", () => {
     cy.document().its('readyState').should('eq', 'complete')
     cy.contains('button.clear-button', 'reset').then(($button) => $button[0].click())
     cy.location('search').should('not.include', 'defaulttimefilter=')
+})
+
+
+/**
+ * @module ExternalModule
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example I close the dialog box for the external module {string}
+ * @param {string} name - Name of external module
+ * @description Close the dialog box for the external module
+ */
+Given("I close the dialog box for the external module {string}", (name) => {
+    cy.get('.modal-dialog').contains(name).parents('div[class="modal-header"]').within(() => {
+        cy.get('button[class=close]').click()
+    })
+})
+
+
+/**
+ * @module Versioning/MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example I should see the field labeled {string} disabled
+ * @param {string} field_name - name of field
+ * @description Verify field is disabled
+ */
+Given("I should see the field labeled {string} disabled", (field_name) => {
+    let contains = ''
+    let last_label = field_name
+    field_name.split(' ').forEach((val) => {
+        contains += `:has(:contains(${JSON.stringify(val)}))`
+        last_label = val
+    })
+    let outer_element = `tr${contains}:has(input[type=text]):visible:first`
+
+    cy.get(outer_element).within(() => {
+        cy.get(`label:contains(${JSON.stringify(last_label)})`)
+            .invoke('attr', 'id')
+            .then(($id) => {
+                let elm = cy.get('[name="' + $id.split('label-')[1] + '"]')
+                elm.should('have.attr', 'disabled')
+            })
+    })
+})
+
+
+/**
+ * @module EmbellishFields/MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example I should see {string} within the data entry field labeled {string}
+ * @param {string} fieldOptions - field options visible
+ * @param {string} label - Field Label
+ * @description verifies data entry field contains text
+ */
+Given("I should see {string} within the data entry field labeled {string}", (fieldOptions, label) => {
+    cy.get('#questiontable').find('td').contains(label).parents('tr').should('contain', fieldOptions)
+})
+
+
+/**
+ * @module MonitoringQR
+ * @author Mintoo Xavier <min2xavier@gmail.com>
+ * @example I should see {int} row(s) in the {emTableName} table
+ * @param {int} num - number of row(s)
+ * @param {string} emTableName - available options: 'monitoring logging'
+ * @description verifies the table contains the specified number of row(s)
+ */
+Given('I should see {int} row(s) in the {emTableName} table', (num, tableName) => {
+    const element = emTableName[tableName] + ' tbody tr'
+    cy.get(element).its('length').then ((rowCount) => {
+        // Subtracting 1 for header and dividing by 2 as each entry has 2 rows
+        rowCount = (rowCount - 1) / 2
+
+        expect(rowCount).to.be.equal(num)
+    })
 })
